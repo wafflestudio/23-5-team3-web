@@ -1,14 +1,9 @@
-import { useState } from 'react';
+import MyPage from './pages/MyPage/MyPage';
 
 const App = () => {
-  const [count, setCount] = useState(0);
-
   return (
     <div>
-      <p>Hello World!</p>
-      <button onClick={() => setCount((count) => count + 1)}>
-        Count is {count}
-      </button>
+      <MyPage />
     </div>
   );
 };
