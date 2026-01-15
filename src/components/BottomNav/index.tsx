@@ -1,5 +1,5 @@
+import { FaComment, FaPlus, FaSearch, FaUser } from 'react-icons/fa';
 import { Link, useLocation } from 'react-router-dom';
-import { FaSearch, FaPlus, FaComment, FaUser } from 'react-icons/fa';
 import './BottomNav.css';
 
 const BottomNav = () => {

@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes, Outlet } from 'react-router-dom';
+import { BrowserRouter, Outlet, Route, Routes } from 'react-router-dom';
 import BottomNav from '../components/BottomNav';
 import CreateRoom from '../pages/CreateRoom';
 import Login from '../pages/Login';
