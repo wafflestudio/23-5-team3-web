@@ -1,16 +1,7 @@
-import { useState } from 'react';
+import Router from './router/Router';
 
 const App = () => {
-  const [count, setCount] = useState(0);
-
-  return (
-    <div>
-      <p>Hello World!</p>
-      <button onClick={() => setCount((count) => count + 1)}>
-        Count is {count}
-      </button>
-    </div>
-  );
+  return <Router />;
 };
 
 export default App;
