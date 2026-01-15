@@ -1,6 +1,6 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Login from '../pages/Login';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import CreateRoom from '../pages/CreateRoom';
+import Login from '../pages/Login';
 
 const Router = () => {
   return (
