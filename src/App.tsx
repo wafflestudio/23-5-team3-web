@@ -1,10 +1,10 @@
-import Router from './router/Router';
 import RoomSearch from './pages/SearchRoom/RoomSearch';
+import Router from './router/Router';
 
 const App = () => {
-  return ( 
+  return (
     <div>
-      <Router />;
+      <Router />
       <RoomSearch />
     </div>
   );
