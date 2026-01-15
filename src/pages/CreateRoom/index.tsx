@@ -1,5 +1,5 @@
 import axios from 'axios';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { userState } from '../../common/user';
 import './CreateRoom.css';
 
