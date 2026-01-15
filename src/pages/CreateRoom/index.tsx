@@ -1,15 +1,15 @@
-import axios from "axios";
-import { useState } from "react";
-import { userState } from "../../common/user";
-import "./CreateRoom.css";
+import axios from 'axios';
+import { useState } from 'react';
+import { userState } from '../../common/user';
+import './CreateRoom.css';
 
-const landmarks = ["서울대입구역", "낙성대역", "자연대", "행정관"];
+const landmarks = ['서울대입구역', '낙성대역', '자연대', '행정관'];
 
 const CreateRoom = () => {
-  const [start, setStart] = useState("");
-  const [end, setEnd] = useState("");
-  const [dateTime, setDateTime] = useState("");
-  const [roomName, setRoomName] = useState("");
+  const [start, setStart] = useState('');
+  const [end, setEnd] = useState('');
+  const [dateTime, setDateTime] = useState('');
+  const [roomName, setRoomName] = useState('');
   const [maxParticipants, setMaxParticipants] = useState(1);
 
   const handleParticipantChange = (amount: number) => {
@@ -24,7 +24,7 @@ const CreateRoom = () => {
 
   const handleCreateRoom = async () => {
     if (!start || !end || !dateTime || !roomName) {
-      alert("모든 필드를 채워주세요.");
+      alert('모든 필드를 채워주세요.');
       return;
     }
 
@@ -33,11 +33,11 @@ const CreateRoom = () => {
       // placeholder email
       // alert("로그인이 필요합니다.");
       // return;
-      userState.email = "dev@snu.ac.kr";
+      userState.email = 'dev@snu.ac.kr';
     }
 
     try {
-      const response = await axios.post("/room", {
+      const response = await axios.post('/room', {
         name: roomName,
         from: start,
         to: end,
@@ -47,15 +47,15 @@ const CreateRoom = () => {
       });
 
       if (response.status === 201 || response.status === 200) {
-        alert("방이 성공적으로 개설되었습니다!");
+        alert('방이 성공적으로 개설되었습니다!');
         // Redirect to the new room's page?
         // window.location.href = `/rooms/${response.data.roomId}`;
       } else {
-        alert("방 개설에 실패했습니다.");
+        alert('방 개설에 실패했습니다.');
       }
     } catch (error) {
-      console.error("Error creating room:", error);
-      alert("방 개설 중 오류가 발생했습니다.");
+      console.error('Error creating room:', error);
+      alert('방 개설 중 오류가 발생했습니다.');
     }
   };
 
