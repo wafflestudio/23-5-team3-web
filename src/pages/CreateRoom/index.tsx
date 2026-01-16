@@ -10,12 +10,12 @@ const CreateRoom = () => {
   const [end, setEnd] = useState('');
   const [dateTime, setDateTime] = useState('');
   const [roomName, setRoomName] = useState('');
-  const [maxParticipants, setMaxParticipants] = useState(1);
+  const [minParticipants, setMinParticipants] = useState(2);
 
   const handleParticipantChange = (amount: number) => {
-    setMaxParticipants((prev) => {
+    setMinParticipants((prev) => {
       const newValue = prev + amount;
-      if (newValue >= 1 && newValue <= 4) {
+      if (newValue >= 2 && newValue <= 4) {
         return newValue;
       }
       return prev;
@@ -30,9 +30,11 @@ const CreateRoom = () => {
 
     // check for development
     if (!userState.isLoggedIn) {
-      // placeholder email
-      // alert("로그인이 필요합니다.");
-      // return;
+      alert('로그인이 필요합니다.');
+      window.location.href = '/login';
+      return;
+    }
+    if (import.meta.env.DEV) {
       userState.email = 'dev@snu.ac.kr';
     }
 
@@ -42,7 +44,7 @@ const CreateRoom = () => {
         from: start,
         to: end,
         time: dateTime,
-        maxHeadcount: maxParticipants,
+        minHeadcount: minParticipants,
         user: userState.email, // Send user's email
       });
 
@@ -112,10 +114,10 @@ const CreateRoom = () => {
 
       <div className="card">
         <div className="input-group">
-          <label>최대 인원</label>
+          <label>최소 인원</label>
           <div className="participant-control">
             <button onClick={() => handleParticipantChange(-1)}>-</button>
-            <span>{maxParticipants}명</span>
+            <span>{minParticipants}명</span>
             <button onClick={() => handleParticipantChange(1)}>+</button>
           </div>
         </div>
