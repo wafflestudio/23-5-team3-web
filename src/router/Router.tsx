@@ -1,5 +1,5 @@
 import { BrowserRouter, Outlet, Route, Routes } from 'react-router-dom';
-import BottomNav from '../components/BottomNav';
+import NavBar from '../components/NavBar';
 import CreateRoom from '../pages/CreateRoom';
 import Login from '../pages/Login';
 import MyChat from '../pages/MyChat';
@@ -9,12 +9,12 @@ import './MainLayout.css';
 
 const MainLayout = () => {
   return (
-    <div className="main-layout">
-      <div className="main-content">
+    <>
+      <NavBar />
+      <div className="main-container">
         <Outlet />
       </div>
-      <BottomNav />
-    </div>
+    </>
   );
 };
 
