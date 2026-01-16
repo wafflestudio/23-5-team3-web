@@ -11,13 +11,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 50px;
+  height: 55px;
   width: 100%;
   background-color: #ffffff;
   border-bottom: 1px solid #e0e0e0;
   padding: 0 20px;
   box-sizing: border-box;
-  position: relative;
+  position: sticky;
 }
 
 .logo {
@@ -25,6 +25,7 @@
 }
 
 .logo img {
+  padding-top: 5px;
   height: 30px;
 }
 

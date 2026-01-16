@@ -12,6 +12,13 @@ const NavBar = () => {
     { path: '/my-page', icon: <FaUser />, label: 'myPage' },
   ];
 
+  const isLinkActive = (path: string) => {
+    if (path === '/search-room' && location.pathname === '/') {
+      return true;
+    }
+    return location.pathname === path;
+  };
+
   return (
     <div className="nav-wrapper">
       <nav className="navBar">
@@ -25,7 +32,7 @@ const NavBar = () => {
             <Link
               key={path}
               to={path}
-              className={`nav-item ${location.pathname === path ? 'active' : ''}`}
+              className={`nav-item ${isLinkActive(path) ? 'active' : ''}`}
             >
               <div className="icon">{icon}</div>
               <div className="label">{label}</div>
