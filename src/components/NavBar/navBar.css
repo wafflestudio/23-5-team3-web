@@ -2,7 +2,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 60px;
+  height: 50px;
   width: 100%;
   background-color: #ffffff;
   border-bottom: 1px solid #e0e0e0;
@@ -18,7 +18,7 @@
 }
 
 .logo img {
-  height: 40px;
+  height: 30px;
 }
 
 .nav-links {
