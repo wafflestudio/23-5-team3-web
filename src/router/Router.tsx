@@ -5,15 +5,12 @@ import Login from '../pages/Login';
 import MyChat from '../pages/MyChat';
 import MyPage from '../pages/MyPage/MyPage';
 import RoomSearch from '../pages/SearchRoom/RoomSearch';
-import './MainLayout.css';
 
 const MainLayout = () => {
   return (
     <>
       <NavBar />
-      <div className="main-container">
-        <Outlet />
-      </div>
+      <Outlet />
     </>
   );
 };
