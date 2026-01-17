@@ -65,4 +65,9 @@
 .login-button {
   color: #333;
   text-decoration: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  padding: 0;
 }
