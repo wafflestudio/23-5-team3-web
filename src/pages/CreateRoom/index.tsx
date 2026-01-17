@@ -16,7 +16,7 @@ const CreateRoom = () => {
   const handleCapacityChange = (amount: number) => {
     setMinCapacity((prev) => {
       const newValue = prev + amount;
-      if (newValue >= 2 && newValue <= 4) {
+      if (newValue >= 1 && newValue <= 4) {
         return newValue;
       }
       return prev;
