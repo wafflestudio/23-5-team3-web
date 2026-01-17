@@ -1,8 +1,8 @@
 import { useEffect } from 'react';
-import Router from './router/Router';
-import { getMe } from './api/auth';
 import apiClient from './api';
+import { getMe } from './api/auth';
 import { userState } from './common/user';
+import Router from './router/Router';
 
 const App = () => {
   useEffect(() => {
@@ -12,7 +12,8 @@ const App = () => {
 
       if (urlToken) {
         localStorage.setItem('accessToken', urlToken);
-        apiClient.defaults.headers.common['Authorization'] = `Bearer ${urlToken}`;
+        apiClient.defaults.headers.common['Authorization'] =
+          `Bearer ${urlToken}`;
         // Clean up the URL
         window.history.replaceState({}, document.title, '/');
       }

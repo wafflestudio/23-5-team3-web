@@ -16,6 +16,9 @@ interface RoomCreationResponse {
 export const createRoom = async (
   roomDetails: RoomCreationRequest
 ): Promise<RoomCreationResponse> => {
-  const response = await apiClient.post<RoomCreationResponse>('/room', roomDetails);
+  const response = await apiClient.post<RoomCreationResponse>(
+    '/room',
+    roomDetails
+  );
   return response.data;
 };

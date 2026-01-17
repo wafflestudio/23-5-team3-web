@@ -67,7 +67,11 @@ const NavBar = () => {
         </div>
         <div className="login">
           {userState.isLoggedIn ? (
-            <button type="button" onClick={handleLogout} className="login-button">
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="login-button"
+            >
               로그아웃
             </button>
           ) : (
