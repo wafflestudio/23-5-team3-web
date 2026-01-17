@@ -1,10 +1,11 @@
-import { useEffect } from 'react';
-import apiClient from './api';
-import { getMe } from './api/auth';
-import { userState } from './common/user';
+// import { useEffect } from 'react';
+// import apiClient from './api';
+// import { getMe } from './api/auth';
+// import { userState } from './common/user';
 import Router from './router/Router';
 
 const App = () => {
+  /*
   useEffect(() => {
     const checkUser = async () => {
       const searchParams = new URLSearchParams(window.location.search);
@@ -18,6 +19,7 @@ const App = () => {
         window.history.replaceState({}, document.title, '/');
       }
 
+      
       const token = localStorage.getItem('accessToken');
       if (token) {
         apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
@@ -35,6 +37,7 @@ const App = () => {
     };
     checkUser();
   }, []);
+  */
 
   return <Router />;
 };
