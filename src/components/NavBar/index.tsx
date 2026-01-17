@@ -1,5 +1,8 @@
 import { FaComment, FaPlus, FaSearch, FaUser } from 'react-icons/fa';
 import { Link, useLocation } from 'react-router-dom';
+import { logout } from '../../api/auth';
+import { BACKEND_URL } from '../../api/constants';
+import { userState } from '../../common/user';
 import './navBar.css';
 
 const NavBar = () => {
@@ -17,6 +20,29 @@ const NavBar = () => {
       return true;
     }
     return location.pathname === path;
+  };
+
+  const handleGoogleLogin = () => {
+    const frontendRedirectUri = window.location.origin;
+
+    const encodedUri = encodeURIComponent(frontendRedirectUri);
+    const googleLoginUrl = `${BACKEND_URL}/login?redirect_uri=${encodedUri}`;
+
+    window.location.href = googleLoginUrl;
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      userState.isLoggedIn = false;
+      userState.email = null;
+      userState.nickname = '학부생';
+      userState.profileImage = null;
+      localStorage.removeItem('accessToken');
+      window.location.href = '/';
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   return (
@@ -40,9 +66,19 @@ const NavBar = () => {
           ))}
         </div>
         <div className="login">
-          <Link to="/login" className="login-button">
-            로그인
-          </Link>
+          {userState.isLoggedIn ? (
+            <button type="button" onClick={handleLogout} className="login-button">
+              로그아웃
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              className="login-button"
+            >
+              로그인
+            </button>
+          )}
         </div>
       </nav>
     </div>
