@@ -1,35 +1,46 @@
+import { useAtom } from 'jotai';
 import React, { useState, useEffect, useRef } from 'react';
-import { userState } from '../../common/user';
+import { updateProfilePicture } from '../../api/user';
+import {
+  emailAtom,
+  isLoggedInAtom,
+  nicknameAtom,
+  profileImageAtom,
+} from '../../common/user';
 import './MyPage.css';
 
 const MyPage = () => {
-  // 1. 초기값 설정 (userState에서 가져옴)
-  const [nickname, setNickname] = useState(userState.nickname || '익명');
-  const [profileImage, setProfileImage] = useState<string | null>(
-    userState.profileImage
-  );
-  const [isEditing, setIsEditing] = useState(false); // 수정 모드 여부
+  const [isLoggedIn] = useAtom(isLoggedInAtom);
+  const [email] = useAtom(emailAtom);
+  const [nickname, setNickname] = useAtom(nicknameAtom);
+  const [profileImage, setProfileImage] = useAtom(profileImageAtom);
+
+  // Local state for editing mode and file object
+  const [isEditing, setIsEditing] = useState(false);
+  const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+
+  // Keep a copy of the original nickname for cancellation
+  const [originalNickname, setOriginalNickname] = useState(nickname);
 
   // 파일 입력창(input type="file")을 열기 위한 ref
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // 로그인 안 된 상태로 접근 시 처리 (예시)
-    if (!userState.isLoggedIn && !userState.email) {
-      // 실제로는 로그인 페이지로 리다이렉트 하거나 경고 표시
+    if (!isLoggedIn) {
       // alert("로그인이 필요한 서비스입니다.");
       // window.location.href = '/';
     }
-  }, []);
+  }, [isLoggedIn]);
 
   // 이미지 업로드 핸들러 (미리보기 기능)
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setProfileImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
-        setProfileImage(result); // 화면에 즉시 반영
+        setProfileImage(result); // Update atom for immediate preview
       };
       reader.readAsDataURL(file);
     }
@@ -42,16 +53,37 @@ const MyPage = () => {
     }
   };
 
+  const handleEdit = () => {
+    setIsEditing(true);
+    setOriginalNickname(nickname); // Save current nickname on edit start
+  };
+
   // 저장 버튼 클릭 시
-  const handleSave = () => {
-    // 2. 변경된 정보를 전역 userState에 저장 (API 연결 시 여기서 axios.put 호출)
-    userState.nickname = nickname;
-    userState.profileImage = profileImage;
+  const handleSave = async () => {
+    try {
+      if (profileImageFile) {
+        const response = await updateProfilePicture(profileImageFile);
+        setProfileImage(response.profileImageUrl); // Update global state
+      }
 
-    // console.log('저장된 정보:', { nickname, profileImage }); // 디버깅용
+      // Here you would also have an API call to update the nickname
+      // await updateNickname(nickname);
+      // For now, we just set the atom, which is already done by the input's onChange
 
+      setIsEditing(false);
+      alert('프로필이 수정되었습니다!');
+    } catch (error) {
+      console.error('프로필 수정 실패:', error);
+      alert('프로필 수정에 실패했습니다.');
+      setNickname(originalNickname); // Revert on failure
+    }
+  };
+
+  const handleCancel = () => {
     setIsEditing(false);
-    alert('프로필이 수정되었습니다!');
+    setNickname(originalNickname); // Restore original nickname
+    // The profile image will also revert because we're not saving the file change
+    // You might need a more robust way to handle image cancellation if needed
   };
 
   return (
@@ -80,10 +112,7 @@ const MyPage = () => {
         <div className="profile-info">
           <div className="info-row">
             <label>이메일</label>
-            {/* 이메일은 수정 불가 (Google 로그인 정보) */}
-            <span className="email-text">
-              {userState.email || 'guest@snu.ac.kr'}
-            </span>
+            <span className="email-text">{email || 'guest@snu.ac.kr'}</span>
           </div>
 
           <div className="info-row">
@@ -108,19 +137,12 @@ const MyPage = () => {
               <button className="save-btn" onClick={handleSave}>
                 저장
               </button>
-              <button
-                className="cancel-btn"
-                onClick={() => {
-                  setIsEditing(false);
-                  setNickname(userState.nickname); // 취소 시 원래 값 복구
-                  setProfileImage(userState.profileImage);
-                }}
-              >
+              <button className="cancel-btn" onClick={handleCancel}>
                 취소
               </button>
             </>
           ) : (
-            <button className="edit-btn" onClick={() => setIsEditing(true)}>
+            <button className="edit-btn" onClick={handleEdit}>
               프로필 수정
             </button>
           )}

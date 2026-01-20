@@ -1,10 +1,16 @@
+import { useAtom } from 'jotai';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { createRoom } from '../../api/room';
-import { userState } from '../../common/user';
+import { isLoggedInAtom } from '../../common/user';
 import './CreateRoom.css';
 
-const landmarks = ['서울대입구역', '낙성대역', '자연대', '행정관'];
+const landmarks = {
+  서울대입구역: 1,
+  낙성대역: 2,
+  자연대: 3,
+  행정관: 4,
+};
 
 const CreateRoom = () => {
   const navigate = useNavigate();
@@ -12,11 +18,13 @@ const CreateRoom = () => {
   const [end, setEnd] = useState('');
   const [departureTime, setDepartureTime] = useState('');
   const [minCapacity, setMinCapacity] = useState(2);
+  const [isLoggedIn] = useAtom(isLoggedInAtom);
 
-  const handleCapacityChange = (amount: number) => {
+  const handleMinCapacityChange = (amount: number) => {
     setMinCapacity((prev) => {
       const newValue = prev + amount;
       if (newValue >= 2 && newValue <= 4) {
+        // Max capacity is 4
         return newValue;
       }
       return prev;
@@ -30,14 +38,14 @@ const CreateRoom = () => {
       return;
     }
 
-    if (!userState.isLoggedIn) {
+    if (!isLoggedIn) {
       alert('로그인이 필요합니다.');
       window.location.href = '/';
       return;
     }
 
-    const departureId = landmarks.indexOf(start) + 1;
-    const destinationId = landmarks.indexOf(end) + 1;
+    const departureId = landmarks[start as keyof typeof landmarks];
+    const destinationId = landmarks[end as keyof typeof landmarks];
 
     const departureTimeISO = new Date(departureTime).toISOString();
 
@@ -47,8 +55,8 @@ const CreateRoom = () => {
         destinationId,
         departureTime: departureTimeISO,
         minCapacity,
-        maxCapacity: 4,
-        estimatedFee: 0, // Hardcoded placeholder for estimatedFee
+        maxCapacity: 4, // Hardcoded
+        estimatedFee: 0, // Hardcoded
       });
 
       alert('방이 성공적으로 개설되었습니다!');
@@ -67,7 +75,7 @@ const CreateRoom = () => {
         <div className="location-select">
           <select value={start} onChange={(e) => setStart(e.target.value)}>
             <option value="">출발지</option>
-            {landmarks.map((landmark) => (
+            {Object.keys(landmarks).map((landmark) => (
               <option key={`start-${landmark}`} value={landmark}>
                 {landmark}
               </option>
@@ -78,7 +86,7 @@ const CreateRoom = () => {
         <div className="location-select">
           <select value={end} onChange={(e) => setEnd(e.target.value)}>
             <option value="">도착지</option>
-            {landmarks.map((landmark) => (
+            {Object.keys(landmarks).map((landmark) => (
               <option key={`end-${landmark}`} value={landmark}>
                 {landmark}
               </option>
@@ -102,9 +110,9 @@ const CreateRoom = () => {
         <div className="input-group">
           <label>최소 인원</label>
           <div className="participant-control">
-            <button onClick={() => handleCapacityChange(-1)}>-</button>
+            <button onClick={() => handleMinCapacityChange(-1)}>-</button>
             <span>{minCapacity}명</span>
-            <button onClick={() => handleCapacityChange(1)}>+</button>
+            <button onClick={() => handleMinCapacityChange(1)}>+</button>
           </div>
         </div>
       </div>

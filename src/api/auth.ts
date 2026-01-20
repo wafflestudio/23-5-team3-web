@@ -1,4 +1,4 @@
-import apiClient from './index';
+// import apiClient from './index';
 
 // export interface User {
 //   email: string;
@@ -12,8 +12,6 @@ import apiClient from './index';
 //   return response.data;
 // };
 
-export const logout = async () => {
-  await apiClient.post('/logout');
-  localStorage.removeItem('accessToken');
-  delete apiClient.defaults.headers.common['Authorization'];
-};
+// export const logout = async () => {
+//   await apiClient.post('/logout');
+// };

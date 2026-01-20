@@ -1,12 +1,22 @@
+import { useAtom } from 'jotai';
 import { FaComment, FaPlus, FaSearch, FaUser } from 'react-icons/fa';
 import { Link, useLocation } from 'react-router-dom';
-import { logout } from '../../api/auth';
+// import { logout } from '../../api/auth';
 import { BACKEND_URL } from '../../api/constants';
-import { userState } from '../../common/user';
+import {
+  emailAtom,
+  isLoggedInAtom,
+  nicknameAtom,
+  profileImageAtom,
+} from '../../common/user';
 import './navBar.css';
 
 const NavBar = () => {
   const location = useLocation();
+  const [isLoggedIn, _setIsLoggedIn] = useAtom(isLoggedInAtom);
+  const [, _setEmail] = useAtom(emailAtom);
+  const [, _setNickname] = useAtom(nicknameAtom);
+  const [, _setProfileImage] = useAtom(profileImageAtom);
 
   const navLinks = [
     { path: '/search-room', icon: <FaSearch />, label: 'roomSearch' },
@@ -31,18 +41,12 @@ const NavBar = () => {
     window.location.href = googleLoginUrl;
   };
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      userState.isLoggedIn = false;
-      userState.email = null;
-      userState.nickname = '학부생';
-      userState.profileImage = null;
-      localStorage.removeItem('accessToken');
-      window.location.href = '/';
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
+  const handleLogout = () => {
+    // This assumes the backend's /logout endpoint is updated
+    // to accept a `redirect_uri` query parameter.
+    const frontendRedirectUri = window.location.origin;
+    const encodedUri = encodeURIComponent(frontendRedirectUri);
+    window.location.href = `${BACKEND_URL}/logout?redirect_uri=${encodedUri}`;
   };
 
   return (
@@ -66,7 +70,7 @@ const NavBar = () => {
           ))}
         </div>
         <div className="login">
-          {userState.isLoggedIn ? (
+          {isLoggedIn ? (
             <button
               type="button"
               onClick={handleLogout}

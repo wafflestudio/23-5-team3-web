@@ -1,11 +1,9 @@
-// types.ts (별도 파일로 관리하거나 컴포넌트 상단에 정의)
 export interface RoomData {
-  roomId: number; // 고유 ID
-  name: string;
-  from: string;
-  to: string;
-  time: string; // ISO String or datetime string
-  maxHeadcount: number;
-  currentHeadcount: number; // 현재 인원 (보통 검색시 필요함)
-  user: string; // 방장
+  roomId: number;
+  departure: string; // 출발지 (한글 변환됨)
+  destination: string; // 도착지 (한글 변환됨)
+  departureTime: string; // 출발 시간 (ISO String)
+  currentCapacity: number; // 현재 인원
+  maxCapacity: number; // 최대 인원
+  hostName: string; // 방장 이름 (또는 익명 ID)
 }

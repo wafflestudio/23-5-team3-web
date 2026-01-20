@@ -1,43 +1,34 @@
-// import { useEffect } from 'react';
-// import apiClient from './api';
-// import { getMe } from './api/auth';
-// import { userState } from './common/user';
+import { useSetAtom } from 'jotai';
+import { useEffect } from 'react';
+import { getMe } from './api/auth';
+import {
+  emailAtom,
+  isLoggedInAtom,
+  nicknameAtom,
+  profileImageAtom,
+} from './common/user';
 import Router from './router/Router';
 
 const App = () => {
-  /*
+  const setIsLoggedIn = useSetAtom(isLoggedInAtom);
+  const setEmail = useSetAtom(emailAtom);
+  const setNickname = useSetAtom(nicknameAtom);
+  const setProfileImage = useSetAtom(profileImageAtom);
+
   useEffect(() => {
     const checkUser = async () => {
-      const searchParams = new URLSearchParams(window.location.search);
-      const urlToken = searchParams.get('token');
-
-      if (urlToken) {
-        localStorage.setItem('accessToken', urlToken);
-        apiClient.defaults.headers.common['Authorization'] =
-          `Bearer ${urlToken}`;
-        // Clean up the URL
-        window.history.replaceState({}, document.title, '/');
-      }
-
-      
-      const token = localStorage.getItem('accessToken');
-      if (token) {
-        apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-        try {
-          const user = await getMe();
-          userState.isLoggedIn = true;
-          userState.email = user.email;
-          userState.nickname = user.username; // Changed from nickname to username
-          userState.profileImage = user.profileImageUrl; // Changed from profileImage to profileImageUrl
-        } catch (error) {
-          console.error('Failed to fetch user:', error);
-          localStorage.removeItem('accessToken');
-        }
+      try {
+        const user = await getMe();
+        setIsLoggedIn(true);
+        setEmail(user.email);
+        setNickname(user.username);
+        setProfileImage(user.profileImageUrl);
+      } catch (_error) {
+        setIsLoggedIn(false);
       }
     };
     checkUser();
-  }, []);
-  */
+  }, [setIsLoggedIn, setEmail, setNickname, setProfileImage]);
 
   return <Router />;
 };
