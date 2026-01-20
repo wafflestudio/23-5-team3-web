@@ -1,74 +1,75 @@
-/* RoomSearch.css */
-.search-filter-card {
-  background: #fff;
+/* 전체 컨테이너: 화면 전체 높이 사용, 스크롤 없음 */
+.search-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 60px); /* 60px는 NavBar 높이만큼 제외 (조정 필요) */
+  overflow: hidden;
+  background-color: #f8f9fa;
+}
+
+/* 상단 고정 헤더 영역 */
+.sticky-header {
+  flex: 0 0 auto; /* 크기 고정 */
   padding: 20px;
-  border-radius: 10px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
+  background-color: #fff;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.sticky-header h1 {
+  margin: 0 0 15px 0;
+  font-size: 1.5rem;
+  color: #333;
+}
+
+/* 필터 카드 스타일 */
+.search-filter-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.filter-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.filter-row select {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  background-color: white;
+}
+
+.filter-row .arrow {
+  font-weight: bold;
+  color: #888;
+}
+
+/* 스크롤 가능한 리스트 영역 */
+.room-list-scroll {
+  flex: 1 1 auto; /* 남은 공간 모두 차지 */
+  overflow-y: auto; /* 세로 스크롤 허용 */
+  padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 15px;
 }
 
-.filter-row {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.filter-row select,
-.filter-row input {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  flex: 1;
-}
-
-.search-btn {
-  background-color: #007bff;
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 5px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.room-list {
-  display: flex;
-  flex-direction: column;
-}
-
 .no-result {
   text-align: center;
-  padding: 40px;
-  color: #666;
+  color: #888;
+  margin-top: 50px;
 }
 
-.pagination {
-  display: flex;
-  justify-content: center;
-  gap: 5px;
-  margin-top: 20px;
-  margin-bottom: 40px;
-}
-
-.pagination button {
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  background: white;
-  cursor: pointer;
-  border-radius: 4px;
-}
-
-.pagination button.active {
-  background-color: #007bff;
-  color: white;
-  border-color: #007bff;
-}
-
-.pagination button:disabled {
-  background-color: #f0f0f0;
-  cursor: not-allowed;
+/* 로딩 감지용 요소 */
+.loading-sentinel {
+  height: 20px;
+  text-align: center;
   color: #aaa;
+  margin-top: 10px;
 }

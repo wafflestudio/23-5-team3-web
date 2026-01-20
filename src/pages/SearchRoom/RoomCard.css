@@ -1,55 +1,98 @@
-/* RoomCard.css */
+/* 카드 기본 스타일 */
 .room-card {
-  background-color: white;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 12px;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 1px solid #f1f3f5;
   cursor: pointer;
-  transition: box-shadow 0.2s;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 12px;
 }
 
-.room-card:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border-color: #aaa;
+.room-card:active {
+  transform: scale(0.98);
 }
 
-.room-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.room-name {
-  font-weight: bold;
-  font-size: 1.1rem;
-}
-
-.room-user {
-  font-size: 0.8rem;
-  color: #666;
-}
-
-.room-route {
+/* 1. 경로 행 스타일 */
+.room-route-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  background-color: #f9f9f9;
-  padding: 8px;
-  border-radius: 4px;
+  font-size: 1.15rem; /* 글자 크기 키움 */
+  font-weight: 700;
+  color: #212529;
 }
 
-.room-details {
+.location {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 45%; /* 긴 이름 말줄임 처리 */
+}
+
+.arrow {
+  margin: 0 10px;
+  color: #adb5bd;
+  font-weight: normal;
+}
+
+/* 2. 정보 행 (시간, 방장) 스타일 */
+.room-info-row {
   display: flex;
-  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
   font-size: 0.9rem;
-  margin-top: 5px;
+  color: #495057;
 }
 
-.room-headcount.full {
-  color: red;
-  font-weight: bold;
+.time-badge {
+  background-color: #f8f9fa;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  color: #495057;
+}
+
+.host-name {
+  color: #868e96;
+}
+
+/* 3. 상태 행 (배지, 인원) 스타일 */
+.room-status-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #f1f3f5; /* 구분선 추가 */
+  padding-top: 12px;
+}
+
+.status-badge {
+  font-size: 0.85rem;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-weight: 700;
+}
+
+/* 모집중 색상 (초록 계열) */
+.status-badge.open {
+  background-color: #e6fcf5;
+  color: #0ca678;
+}
+
+/* 모집완료 색상 (회색 계열) */
+.status-badge.full {
+  background-color: #f1f3f5;
+  color: #adb5bd;
+}
+
+.headcount {
+  font-weight: 600;
+  color: #343a40;
+  font-size: 0.95rem;
+}
+
+.headcount.full-text {
+  color: #adb5bd;
 }
