@@ -1,6 +1,7 @@
+import { isAxiosError } from 'axios';
 import { useAtom } from 'jotai';
 import React, { useState, useEffect, useRef } from 'react';
-import { updateProfilePicture } from '../../api/user';
+import { updateProfilePicture, updateUsername } from '../../api/user';
 import {
   emailAtom,
   isLoggedInAtom,
@@ -67,13 +68,17 @@ const MyPage = () => {
       }
 
       // Here you would also have an API call to update the nickname
-      // await updateNickname(nickname);
+      await updateUsername(nickname);
       // For now, we just set the atom, which is already done by the input's onChange
 
       setIsEditing(false);
       alert('프로필이 수정되었습니다!');
-    } catch (error) {
-      console.error('프로필 수정 실패:', error);
+    } catch (error: unknown) {
+      if (isAxiosError(error)) {
+        console.error('프로필 수정 실패:', error.response?.data);
+      } else {
+        console.error('An unexpected error occurred:', error);
+      }
       alert('프로필 수정에 실패했습니다.');
       setNickname(originalNickname); // Revert on failure
     }
