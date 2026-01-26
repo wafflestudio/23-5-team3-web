@@ -27,9 +27,23 @@ const getLandmarkName = (id: number) => {
   return LANDMARKS.find((l) => l.id === id)?.name || '알 수 없음';
 };
 
+// [추가] 서버 API 응답 데이터(PotDto)의 타입 정의
+interface PotDto {
+  id: number;
+  ownerId: number;
+  departureId: number;
+  destinationId: number;
+  departureTime: string;
+  minCapacity: number;
+  maxCapacity: number;
+  currentCount: number;
+  estimatedFee: number;
+  status: string;
+}
+
 const RoomSearch = () => {
   // --- 검색 필터 상태 ---
-  // 0은 '전체'를 의미 (초기값 0으로 설정하여 전체 검색 상태로 시작 가능)
+  // 0은 '전체'를 의미합니다.
   const [departureId, setDepartureId] = useState<number>(0);
   const [destinationId, setDestinationId] = useState<number>(0);
 
@@ -47,96 +61,56 @@ const RoomSearch = () => {
   // --- API 데이터 조회 함수 ---
   const fetchRooms = useCallback(
     async (pageNumber: number, isNewSearch: boolean) => {
+      // 로딩 중이면 중복 요청 방지
       if (loadingRef.current) return;
 
       loadingRef.current = true;
       setLoading(true);
 
       try {
-        // 1. 검색 대상 ID 목록 생성
-        // 0(전체)이면 LANDMARKS의 모든 ID를, 아니면 선택된 ID 하나만 배열에 담음
-        const targetDepIds =
-          departureId === 0 ? LANDMARKS.map((l) => l.id) : [departureId];
-        const targetDestIds =
-          destinationId === 0 ? LANDMARKS.map((l) => l.id) : [destinationId];
+        // 단일 API 요청
+        // 0(전체)인 경우 null을 보내 서버가 전체 검색으로 인식하게 함
+        const params = {
+          departureId: departureId === 0 ? null : departureId,
+          destinationId: destinationId === 0 ? null : destinationId,
+          page: pageNumber,
+          size: 10,
+          sort: 'departureTime,asc',
+        };
 
-        // 2. 요청할 모든 조합 생성 (최악의 경우 15 x 15 = 225개 요청이므로 주의 필요)
-        // 실제로는 사용자가 한쪽만 '전체'로 두는 경우가 많을 것임
-        const requestPromises = [];
+        const response = await apiClient.get('/rooms/search', { params });
 
-        for (const depId of targetDepIds) {
-          for (const destId of targetDestIds) {
-            // 출발지와 도착지가 같으면 굳이 조회할 필요 없음 (서버 로직상 불가능할 수 있음)
-            if (depId === destId) continue;
+        // 데이터 매핑
+        const content = response.data.content || [];
 
-            requestPromises.push(
-              apiClient.get('/rooms/search', {
-                params: {
-                  departureId: depId,
-                  destinationId: destId,
-                  page: pageNumber,
-                  size: 10, // 각 요청당 10개씩 (합치면 많아질 수 있음)
-                  sort: ['departureTime,asc'],
-                },
-              })
-            );
-          }
-        }
+        // [수정] any 대신 PotDto 타입 사용
+        const newRooms: RoomData[] = content.map((item: PotDto) => ({
+          roomId: item.id,
+          departure: getLandmarkName(item.departureId),
+          destination: getLandmarkName(item.destinationId),
+          departureTime: item.departureTime,
+          maxCapacity: item.maxCapacity,
+          currentCapacity: item.currentCount,
+          hostName: `학우 ${item.ownerId}`,
+        }));
 
-        // 3. 모든 API 요청 병렬 실행
-        const responses = await Promise.all(requestPromises);
+        // 마지막 페이지 여부 확인
+        const isLast = response.data.last ?? newRooms.length === 0;
 
-        // 4. 결과 취합 및 데이터 매핑
-        let aggregatedRooms: RoomData[] = [];
-        let isAllLast = true; // 모든 요청이 마지막 페이지인지 확인
-
-        for (const res of responses) {
-          const content = res.data.content || [];
-          // 하나라도 마지막 페이지가 아니면(데이터가 더 있으면) hasMore는 true
-          if (res.data.last === false) {
-            isAllLast = false;
-          }
-
-          // biome-ignore lint/suspicious/noExplicitAny: API 응답 처리
-          const mapped = content.map((item: any) => ({
-            roomId: item.id,
-            departure: getLandmarkName(item.departureId),
-            destination: getLandmarkName(item.destinationId),
-            departureTime: item.departureTime,
-            maxCapacity: item.maxCapacity,
-            currentCapacity: item.currentCount,
-            hostName: `학우 ${item.ownerId}`,
-          }));
-          aggregatedRooms = [...aggregatedRooms, ...mapped];
-        }
-
-        // 5. 시간순 정렬 (여러 API 결과를 합쳤으므로 순서가 섞여있을 수 있음)
-        aggregatedRooms.sort(
-          (a, b) =>
-            new Date(a.departureTime).getTime() -
-            new Date(b.departureTime).getTime()
-        );
-
-        // 6. 상태 업데이트
         if (isNewSearch) {
-          setRooms(aggregatedRooms);
+          setRooms(newRooms);
         } else {
           setRooms((prev) => {
-            // 중복 제거 (여러 페이지 요청 시 겹칠 수 있는 가능성 대비)
+            // 중복 방지
             const existingIds = new Set(prev.map((r) => r.roomId));
-            const uniqueNewRooms = aggregatedRooms.filter(
+            const uniqueRooms = newRooms.filter(
               (r) => !existingIds.has(r.roomId)
             );
-            return [...prev, ...uniqueNewRooms].sort(
-              (a, b) =>
-                new Date(a.departureTime).getTime() -
-                new Date(b.departureTime).getTime()
-            );
+            return [...prev, ...uniqueRooms];
           });
         }
 
-        // 데이터가 하나도 없거나, 모든 요청이 마지막 페이지라면 더 이상 불러올 게 없음
-        setHasMore(!isAllLast && aggregatedRooms.length > 0);
+        setHasMore(!isLast);
       } catch (error) {
         console.error('방 목록 불러오기 실패:', error);
       } finally {
