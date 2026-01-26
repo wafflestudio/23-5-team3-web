@@ -1,6 +1,6 @@
 import { useSetAtom } from 'jotai';
 import { useEffect } from 'react';
-import { User, getMe } from './api/auth';
+import { type User, getMe } from './api/auth';
 import {
   emailAtom,
   isLoggedInAtom,
