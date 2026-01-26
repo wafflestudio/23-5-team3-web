@@ -11,7 +11,3 @@ export const getMe = async (): Promise<User> => {
   const response = await apiClient.get<User>('/user/profile');
   return response.data;
 };
-
-// export const logout = async () => {
-//   await apiClient.post('/logout');
-// };

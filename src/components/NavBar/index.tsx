@@ -1,7 +1,6 @@
 import { useAtom } from 'jotai';
 import { FaComment, FaPlus, FaSearch, FaUser } from 'react-icons/fa';
 import { Link, useLocation } from 'react-router-dom';
-// import { logout } from '../../api/auth';
 import { BACKEND_URL } from '../../api/constants';
 import {
   emailAtom,
