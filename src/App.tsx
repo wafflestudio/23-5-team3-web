@@ -1,6 +1,6 @@
 import { useSetAtom } from 'jotai';
 import { useEffect } from 'react';
-import { getMe } from './api/auth';
+import { User, getMe } from './api/auth';
 import {
   emailAtom,
   isLoggedInAtom,
@@ -18,7 +18,7 @@ const App = () => {
   useEffect(() => {
     const checkUser = async () => {
       try {
-        const user = await getMe();
+        const user: User = await getMe();
         setIsLoggedIn(true);
         setEmail(user.email);
         setNickname(user.username);
