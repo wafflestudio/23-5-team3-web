@@ -1,5 +1,10 @@
+import { AxiosError } from 'axios';
+import { useAtomValue } from 'jotai'; // [수정] Jotai 훅 추가
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { BACKEND_URL } from '../../api/constants';
 import apiClient from '../../api/index';
+import { isLoggedInAtom } from '../../common/user'; // [수정] atom import로 변경
 import { type RoomData } from '../../types';
 import RoomCard from './RoomCard';
 import './RoomSearch.css';
@@ -27,7 +32,7 @@ const getLandmarkName = (id: number) => {
   return LANDMARKS.find((l) => l.id === id)?.name || '알 수 없음';
 };
 
-// [추가] 서버 API 응답 데이터(PotDto)의 타입 정의
+// 서버 API 응답 데이터(PotDto)의 타입 정의
 interface PotDto {
   id: number;
   ownerId: number;
@@ -42,8 +47,12 @@ interface PotDto {
 }
 
 const RoomSearch = () => {
+  const navigate = useNavigate();
+
+  // [수정] 전역 상태(Atom)에서 로그인 여부 구독
+  const isLoggedIn = useAtomValue(isLoggedInAtom);
+
   // --- 검색 필터 상태 ---
-  // 0은 '전체'를 의미합니다.
   const [departureId, setDepartureId] = useState<number>(0);
   const [destinationId, setDestinationId] = useState<number>(0);
 
@@ -53,6 +62,11 @@ const RoomSearch = () => {
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
 
+  // --- 모달 상태 ---
+  const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [showJoinModal, setShowJoinModal] = useState(false);
+
   // --- Refs ---
   const loadingRef = useRef(false);
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -61,15 +75,12 @@ const RoomSearch = () => {
   // --- API 데이터 조회 함수 ---
   const fetchRooms = useCallback(
     async (pageNumber: number, isNewSearch: boolean) => {
-      // 로딩 중이면 중복 요청 방지
       if (loadingRef.current) return;
 
       loadingRef.current = true;
       setLoading(true);
 
       try {
-        // 단일 API 요청
-        // 0(전체)인 경우 null을 보내 서버가 전체 검색으로 인식하게 함
         const params = {
           departureId: departureId === 0 ? null : departureId,
           destinationId: destinationId === 0 ? null : destinationId,
@@ -79,11 +90,8 @@ const RoomSearch = () => {
         };
 
         const response = await apiClient.get('/rooms/search', { params });
-
-        // 데이터 매핑
         const content = response.data.content || [];
 
-        // [수정] any 대신 PotDto 타입 사용
         const newRooms: RoomData[] = content.map((item: PotDto) => ({
           roomId: item.id,
           departure: getLandmarkName(item.departureId),
@@ -94,14 +102,12 @@ const RoomSearch = () => {
           hostName: `학우 ${item.ownerId}`,
         }));
 
-        // 마지막 페이지 여부 확인
         const isLast = response.data.last ?? newRooms.length === 0;
 
         if (isNewSearch) {
           setRooms(newRooms);
         } else {
           setRooms((prev) => {
-            // 중복 방지
             const existingIds = new Set(prev.map((r) => r.roomId));
             const uniqueRooms = newRooms.filter(
               (r) => !existingIds.has(r.roomId)
@@ -121,14 +127,14 @@ const RoomSearch = () => {
     [departureId, destinationId]
   );
 
-  // --- Effect 1: 필터 변경 시 (페이지 0부터 재검색) ---
+  // --- Effect 1: 필터 변경 시 ---
   useEffect(() => {
     setPage(0);
     setHasMore(true);
     fetchRooms(0, true);
   }, [fetchRooms]);
 
-  // --- Effect 2: 페이지 변경 시 (추가 로드) ---
+  // --- Effect 2: 페이지 변경 시 ---
   useEffect(() => {
     if (page > 0) {
       fetchRooms(page, false);
@@ -159,9 +165,49 @@ const RoomSearch = () => {
     };
   }, [loading, hasMore]);
 
-  const handleRoomClick = (_roomId: number) => {
-    // console.log(`${roomId}번 방 클릭`);
-    // navigate(`/room/${roomId}`);
+  // --- 핸들러: 방 클릭 ---
+  const handleRoomClick = (roomId: number) => {
+    setSelectedRoomId(roomId);
+
+    // [수정] atom 값(isLoggedIn)을 사용하여 분기 처리
+    if (isLoggedIn) {
+      // 로그인 상태 -> 참여 확인 모달
+      setShowJoinModal(true);
+    } else {
+      // 비로그인 상태 -> 로그인 유도 모달
+      setShowLoginModal(true);
+    }
+  };
+
+  // --- 핸들러: 로그인 버튼 클릭 ---
+  const handleLoginConfirm = () => {
+    const frontendRedirectUri = window.location.origin;
+    const encodedUri = encodeURIComponent(frontendRedirectUri);
+    const googleLoginUrl = `${BACKEND_URL}/login?redirect_uri=${encodedUri}`;
+    window.location.href = googleLoginUrl;
+  };
+
+  // --- 핸들러: 참여하기 버튼 클릭 ---
+  const handleJoinConfirm = async () => {
+    if (!selectedRoomId) return;
+
+    try {
+      await apiClient.post(`/rooms/${selectedRoomId}/join`);
+      navigate('/my-chat');
+    } catch (error) {
+      const axiosError = error as AxiosError<{ errMsg: string }>;
+      const errMsg =
+        axiosError.response?.data?.errMsg || '참여에 실패했습니다.';
+
+      alert(errMsg);
+      setShowJoinModal(false);
+    }
+  };
+
+  const closeModals = () => {
+    setShowLoginModal(false);
+    setShowJoinModal(false);
+    setSelectedRoomId(null);
   };
 
   const handleFilterChange = (
@@ -223,8 +269,98 @@ const RoomSearch = () => {
           </div>
         )}
       </div>
+
+      {/* --- 모달 UI (인라인 스타일 적용) --- */}
+      {(showLoginModal || showJoinModal) && (
+        <div style={modalOverlayStyle}>
+          <div style={modalContentStyle}>
+            {showLoginModal && (
+              <>
+                <p>택시팟에 참여하시려면 로그인이 필요합니다.</p>
+                <div style={buttonGroupStyle}>
+                  <button onClick={closeModals} style={cancelButtonStyle}>
+                    뒤로가기
+                  </button>
+                  <button
+                    onClick={handleLoginConfirm}
+                    style={confirmButtonStyle}
+                  >
+                    로그인
+                  </button>
+                </div>
+              </>
+            )}
+            {showJoinModal && (
+              <>
+                <p>택시팟에 참가하시겠습니까?</p>
+                <div style={buttonGroupStyle}>
+                  <button onClick={closeModals} style={cancelButtonStyle}>
+                    뒤로가기
+                  </button>
+                  <button
+                    onClick={handleJoinConfirm}
+                    style={confirmButtonStyle}
+                  >
+                    참여하기
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
+};
+
+// --- 간단한 모달 스타일 (필요시 CSS 파일로 이동) ---
+const modalOverlayStyle: React.CSSProperties = {
+  position: 'fixed',
+  top: 0,
+  left: 0,
+  width: '100%',
+  height: '100%',
+  backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  zIndex: 1000,
+};
+
+const modalContentStyle: React.CSSProperties = {
+  backgroundColor: 'white',
+  padding: '24px',
+  borderRadius: '12px',
+  width: '300px',
+  textAlign: 'center',
+  boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
+};
+
+const buttonGroupStyle: React.CSSProperties = {
+  display: 'flex',
+  justifyContent: 'space-between',
+  marginTop: '20px',
+  gap: '10px',
+};
+
+const cancelButtonStyle: React.CSSProperties = {
+  flex: 1,
+  padding: '10px',
+  borderRadius: '8px',
+  border: '1px solid #ccc',
+  backgroundColor: '#f5f5f5',
+  cursor: 'pointer',
+};
+
+const confirmButtonStyle: React.CSSProperties = {
+  flex: 1,
+  padding: '10px',
+  borderRadius: '8px',
+  border: 'none',
+  backgroundColor: '#3b82f6',
+  color: 'white',
+  cursor: 'pointer',
+  fontWeight: 'bold',
 };
 
 export default RoomSearch;

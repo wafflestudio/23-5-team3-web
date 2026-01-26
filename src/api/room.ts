@@ -41,6 +41,10 @@ export const getCurrentPot = async (): Promise<Pot> => {
   return response.data;
 };
 
-export const deleteRoom = async (roomId: number): Promise<void> => {
-  await apiClient.delete(`/rooms/${roomId}`);
+// export const deleteRoom = async (roomId: number): Promise<void> => {
+//   await apiClient.delete(`/rooms/${roomId}`);
+// };
+
+export const leaveRoom = async (roomId: number): Promise<void> => {
+  await apiClient.post(`/rooms/${roomId}/leave`);
 };
