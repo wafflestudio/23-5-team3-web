@@ -107,6 +107,7 @@ const CreateRoom = () => {
         <div className="location-select">
           <select value={start} onChange={(e) => setStart(e.target.value)}>
             <option value="">출발지</option>
+
             {landmarks.map((landmark) => (
               <option key={`start-${landmark.id}`} value={landmark.id}>
                 {landmark.name}
