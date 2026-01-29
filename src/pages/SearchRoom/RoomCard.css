@@ -2,14 +2,14 @@
 .room-card {
   background: white;
   border-radius: 12px;
-  padding: 20px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  padding: 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
   border: 1px solid #f1f3f5;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .room-card:active {
@@ -20,68 +20,102 @@
 .room-route-row {
   display: flex;
   align-items: center;
-  font-size: 1.15rem; /* 글자 크기 키움 */
+  font-size: 1.05rem;
   font-weight: 700;
   color: #212529;
+  justify-content: flex-start;
+  gap: 8px;
 }
 
 .location {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 45%; /* 긴 이름 말줄임 처리 */
+  max-width: 45%;
 }
 
 .arrow {
-  margin: 0 10px;
   color: #adb5bd;
   font-weight: normal;
+  flex-shrink: 0;
 }
 
-/* 2. 정보 행 (시간, 방장) 스타일 */
-.room-info-row {
+/* 2. 상세 정보 (시간, 요금) 스타일 */
+.room-details-row {
   display: flex;
   align-items: center;
-  gap: 12px;
   font-size: 0.9rem;
   color: #495057;
+  gap: 6px;
 }
 
-.time-badge {
-  background-color: #f8f9fa;
-  padding: 4px 8px;
-  border-radius: 6px;
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.info-divider {
+  color: #dee2e6;
+  margin: 0 2px;
+}
+
+.fee {
   font-weight: 600;
   color: #495057;
 }
 
-.host-name {
-  color: #868e96;
-}
-
-/* 3. 상태 행 (배지, 인원) 스타일 */
-.room-status-row {
+/* 3. 하단 (방장, 상태) 스타일 */
+.room-footer-row {
   display: flex;
   justify-content: space-between;
+  align-items: flex-end;
+  border-top: 1px solid #f8f9fa;
+  padding-top: 10px;
+  margin-top: 2px;
+}
+
+.host-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.8rem;
+  max-width: 60%;
+}
+
+.host-label {
+  color: #adb5bd;
+  font-size: 0.75rem;
+}
+
+.host-name {
+  color: #495057;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.status-container {
+  display: flex;
   align-items: center;
-  border-top: 1px solid #f1f3f5; /* 구분선 추가 */
-  padding-top: 12px;
+  gap: 8px;
 }
 
 .status-badge {
-  font-size: 0.85rem;
-  padding: 4px 10px;
-  border-radius: 20px;
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  border-radius: 6px;
   font-weight: 700;
 }
 
-/* 모집중 색상 (초록 계열) */
+/* 모집중 색상 */
 .status-badge.open {
   background-color: #e6fcf5;
   color: #0ca678;
 }
 
-/* 모집완료 색상 (회색 계열) */
+/* 모집완료 색상 */
 .status-badge.full {
   background-color: #f1f3f5;
   color: #adb5bd;
@@ -90,7 +124,7 @@
 .headcount {
   font-weight: 600;
   color: #343a40;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
 }
 
 .headcount.full-text {

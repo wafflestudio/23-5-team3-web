@@ -34,11 +34,11 @@ export interface Message {
   datetimeSendAt: string;
 }
 
-export interface GetMessagesResponse {
-  items: Message[];
-  nextCursor: number;
-  hasNext: boolean;
-}
+// export interface GetMessagesResponse {
+//   items: Message[];
+//   nextCursor: number;
+//   hasNext: boolean;
+// }
 
 export const createRoom = async (
   roomDetails: RoomCreationRequest
@@ -59,16 +59,16 @@ export const deleteRoom = async (roomId: number): Promise<void> => {
   await apiClient.delete(`/rooms/${roomId}`);
 };
 
-export const getMessages = async (
-  roomId: number,
-  cursor: number,
-  size = 20
-): Promise<GetMessagesResponse> => {
-  const response = await apiClient.get<GetMessagesResponse>(
-    `/rooms/${roomId}/messages`,
-    {
-      params: { cursor, size },
-    }
-  );
-  return response.data;
-};
+// export const getMessages = async (
+//   roomId: number,
+//   cursor: number,
+//   size = 20
+// ): Promise<GetMessagesResponse> => {
+//   const response = await apiClient.get<GetMessagesResponse>(
+//     `/rooms/${roomId}/messages`,
+//     {
+//       params: { cursor, size },
+//     }
+//   );
+//   return response.data;
+// };

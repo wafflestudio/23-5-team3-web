@@ -1,41 +1,28 @@
 import { AxiosError } from 'axios';
-import { useAtomValue } from 'jotai'; // [수정] Jotai 훅 추가
+import { useAtomValue } from 'jotai';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BACKEND_URL } from '../../api/constants';
 import apiClient from '../../api/index';
-import { isLoggedInAtom } from '../../common/user'; // [수정] atom import로 변경
+import { getLandmarks } from '../../api/map';
+import { isLoggedInAtom } from '../../common/user';
 import { type RoomData } from '../../types';
 import RoomCard from './RoomCard';
 import './RoomSearch.css';
 
-// 서버 DB에 등록된 실제 ID 매핑
-const LANDMARKS = [
-  { id: 1, name: '서울대입구역 3번 출구' },
-  { id: 2, name: '낙성대역 버스정류장' },
-  { id: 3, name: '낙성대입구 버스정류장' },
-  { id: 4, name: '대학동고시촌입구(녹두)' },
-  { id: 5, name: '사당역 4번 출구' },
-  { id: 6, name: '경영대.행정대학원' },
-  { id: 7, name: '자연대.행정관입구' },
-  { id: 8, name: '법대.사회대입구' },
-  { id: 9, name: '농생대' },
-  { id: 10, name: '공대입구(글로벌공학)' },
-  { id: 11, name: '제2공학관(302동)' },
-  { id: 12, name: '학부생활관' },
-  { id: 13, name: '수의대입구.보건대학원' },
-  { id: 14, name: '기숙사 삼거리' },
-  { id: 15, name: '국제대학원' },
-];
+// 랜드마크 타입 정의
+interface Landmark {
+  id: number;
+  name: string;
+  latitude: number;
+  longitude: number;
+}
 
-const getLandmarkName = (id: number) => {
-  return LANDMARKS.find((l) => l.id === id)?.name || '알 수 없음';
-};
-
-// 서버 API 응답 데이터(PotDto)의 타입 정의
+// 서버 API 응답 데이터(PotDto)
 interface PotDto {
   id: number;
   ownerId: number;
+  ownerName: string;
   departureId: number;
   destinationId: number;
   departureTime: string;
@@ -48,15 +35,15 @@ interface PotDto {
 
 const RoomSearch = () => {
   const navigate = useNavigate();
-
-  // [수정] 전역 상태(Atom)에서 로그인 여부 구독
   const isLoggedIn = useAtomValue(isLoggedInAtom);
 
-  // --- 검색 필터 상태 ---
+  // --- 상태 관리 ---
+  const [landmarks, setLandmarks] = useState<Landmark[]>([]);
+  const [landmarksLoaded, setLandmarksLoaded] = useState(false); // 랜드마크 로딩 여부
+
   const [departureId, setDepartureId] = useState<number>(0);
   const [destinationId, setDestinationId] = useState<number>(0);
 
-  // --- 데이터 상태 ---
   const [rooms, setRooms] = useState<RoomData[]>([]);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -69,12 +56,40 @@ const RoomSearch = () => {
 
   // --- Refs ---
   const loadingRef = useRef(false);
-  const observerRef = useRef<IntersectionObserver | null>(null);
   const loadMoreRef = useRef<HTMLDivElement>(null);
+  const observerRef = useRef<IntersectionObserver | null>(null);
 
-  // --- API 데이터 조회 함수 ---
+  // 1. 랜드마크 데이터 먼저 불러오기
+  useEffect(() => {
+    const fetchLandmarksData = async () => {
+      try {
+        const data = await getLandmarks();
+        if (data && data.landmarks) {
+          setLandmarks(data.landmarks);
+          setLandmarksLoaded(true); // 로딩 완료 처리
+        }
+      } catch (error) {
+        console.error('랜드마크 정보를 불러오지 못했습니다:', error);
+        // 에러가 나도 일단 로딩 끝난 것으로 처리하거나 에러 UI 표시
+        setLandmarksLoaded(true);
+      }
+    };
+    fetchLandmarksData();
+  }, []);
+
+  // 랜드마크 이름 조회 헬퍼
+  const getLandmarkName = useCallback(
+    (id: number) => {
+      return landmarks.find((l) => l.id === id)?.name || '알 수 없음';
+    },
+    [landmarks]
+  );
+
+  // 2. 방 목록 조회 함수 (랜드마크 로딩 후에만 실행)
   const fetchRooms = useCallback(
     async (pageNumber: number, isNewSearch: boolean) => {
+      // 랜드마크가 아직 로딩되지 않았으면 API 호출 안 함
+      if (!landmarksLoaded) return;
       if (loadingRef.current) return;
 
       loadingRef.current = true;
@@ -99,7 +114,8 @@ const RoomSearch = () => {
           departureTime: item.departureTime,
           maxCapacity: item.maxCapacity,
           currentCapacity: item.currentCount,
-          hostName: `학우 ${item.ownerId}`,
+          hostName: item.ownerName,
+          estimatedFee: item.estimatedFee,
         }));
 
         const isLast = response.data.last ?? newRooms.length === 0;
@@ -124,26 +140,28 @@ const RoomSearch = () => {
         setLoading(false);
       }
     },
-    [departureId, destinationId]
+    [departureId, destinationId, getLandmarkName, landmarksLoaded]
   );
 
-  // --- Effect 1: 필터 변경 시 ---
+  // 필터 변경 시 초기화
   useEffect(() => {
+    if (!landmarksLoaded) return;
     setPage(0);
     setHasMore(true);
     fetchRooms(0, true);
-  }, [fetchRooms]);
+  }, [fetchRooms, landmarksLoaded]); // fetchRooms가 의존성 변경으로 바뀔 때 실행됨
 
-  // --- Effect 2: 페이지 변경 시 ---
+  // 페이지 변경(스크롤) 시 추가 로딩
   useEffect(() => {
+    if (!landmarksLoaded) return;
     if (page > 0) {
       fetchRooms(page, false);
     }
-  }, [page, fetchRooms]);
+  }, [page, fetchRooms, landmarksLoaded]);
 
-  // --- Effect 3: 무한 스크롤 ---
+  // 무한 스크롤 옵저버
   useEffect(() => {
-    if (loading || !hasMore) return;
+    if (loading || !hasMore || !landmarksLoaded) return;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -157,29 +175,23 @@ const RoomSearch = () => {
     if (loadMoreRef.current) {
       observer.observe(loadMoreRef.current);
     }
-
     observerRef.current = observer;
 
     return () => {
       if (observerRef.current) observer.disconnect();
     };
-  }, [loading, hasMore]);
+  }, [loading, hasMore, landmarksLoaded]);
 
-  // --- 핸들러: 방 클릭 ---
+  // --- Handlers ---
   const handleRoomClick = (roomId: number) => {
     setSelectedRoomId(roomId);
-
-    // [수정] atom 값(isLoggedIn)을 사용하여 분기 처리
     if (isLoggedIn) {
-      // 로그인 상태 -> 참여 확인 모달
       setShowJoinModal(true);
     } else {
-      // 비로그인 상태 -> 로그인 유도 모달
       setShowLoginModal(true);
     }
   };
 
-  // --- 핸들러: 로그인 버튼 클릭 ---
   const handleLoginConfirm = () => {
     const frontendRedirectUri = window.location.origin;
     const encodedUri = encodeURIComponent(frontendRedirectUri);
@@ -187,10 +199,8 @@ const RoomSearch = () => {
     window.location.href = googleLoginUrl;
   };
 
-  // --- 핸들러: 참여하기 버튼 클릭 ---
   const handleJoinConfirm = async () => {
     if (!selectedRoomId) return;
-
     try {
       await apiClient.post(`/rooms/${selectedRoomId}/join`);
       navigate('/my-chat');
@@ -198,7 +208,6 @@ const RoomSearch = () => {
       const axiosError = error as AxiosError<{ errMsg: string }>;
       const errMsg =
         axiosError.response?.data?.errMsg || '참여에 실패했습니다.';
-
       alert(errMsg);
       setShowJoinModal(false);
     }
@@ -217,8 +226,18 @@ const RoomSearch = () => {
     setter(Number(e.target.value));
   };
 
+  // 랜드마크 로딩 전에는 로딩 화면 표시
+  if (!landmarksLoaded) {
+    return (
+      <div className="search-container loading-container">
+        <div className="loading-text">로딩 중...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="search-container">
+      {/* 상단 고정 헤더 */}
       <div className="sticky-header">
         <h1>택시팟 찾기</h1>
         <div className="search-filter-card">
@@ -228,7 +247,7 @@ const RoomSearch = () => {
               onChange={(e) => handleFilterChange(e, setDepartureId)}
             >
               <option value={0}>출발지 전체</option>
-              {LANDMARKS.map((place) => (
+              {landmarks.map((place) => (
                 <option key={`start-${place.id}`} value={place.id}>
                   {place.name}
                 </option>
@@ -240,7 +259,7 @@ const RoomSearch = () => {
               onChange={(e) => handleFilterChange(e, setDestinationId)}
             >
               <option value={0}>도착지 전체</option>
-              {LANDMARKS.map((place) => (
+              {landmarks.map((place) => (
                 <option key={`end-${place.id}`} value={place.id}>
                   {place.name}
                 </option>
@@ -250,6 +269,7 @@ const RoomSearch = () => {
         </div>
       </div>
 
+      {/* 스크롤 가능한 목록 영역 */}
       <div className="room-list-scroll">
         {rooms.length > 0
           ? rooms.map((room) => (
@@ -270,7 +290,7 @@ const RoomSearch = () => {
         )}
       </div>
 
-      {/* --- 모달 UI (인라인 스타일 적용) --- */}
+      {/* 모달 */}
       {(showLoginModal || showJoinModal) && (
         <div style={modalOverlayStyle}>
           <div style={modalContentStyle}>
@@ -313,7 +333,7 @@ const RoomSearch = () => {
   );
 };
 
-// --- 간단한 모달 스타일 (필요시 CSS 파일로 이동) ---
+// --- 스타일 객체 ---
 const modalOverlayStyle: React.CSSProperties = {
   position: 'fixed',
   top: 0,
@@ -331,7 +351,8 @@ const modalContentStyle: React.CSSProperties = {
   backgroundColor: 'white',
   padding: '24px',
   borderRadius: '12px',
-  width: '300px',
+  width: '80%',
+  maxWidth: '300px',
   textAlign: 'center',
   boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
 };
