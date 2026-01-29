@@ -6,14 +6,14 @@ import {
   isLoggedInAtom,
   nicknameAtom,
   profileImageAtom,
-  userIdAtom,
+  // userIdAtom,
 } from './common/user';
 import Router from './router/Router';
 
 const App = () => {
   const [loading, setLoading] = useState(true);
   const setIsLoggedIn = useSetAtom(isLoggedInAtom);
-  const setUserId = useSetAtom(userIdAtom);
+  // const setUserId = useSetAtom(userIdAtom);
   const setEmail = useSetAtom(emailAtom);
   const setNickname = useSetAtom(nicknameAtom);
   const setProfileImage = useSetAtom(profileImageAtom);
@@ -23,7 +23,7 @@ const App = () => {
       try {
         const user: User = await getMe();
         setIsLoggedIn(true);
-        setUserId(user.id);
+        // setUserId(user.id);
         setEmail(user.email);
         setNickname(user.username);
         setProfileImage(user.profileImageUrl);
@@ -34,7 +34,7 @@ const App = () => {
       }
     };
     checkUser();
-  }, [setIsLoggedIn, setUserId, setEmail, setNickname, setProfileImage]);
+  }, [setIsLoggedIn, setEmail, setNickname, setProfileImage]); //setUserId 뺌
 
   if (loading) {
     return <div>Loading...</div>;

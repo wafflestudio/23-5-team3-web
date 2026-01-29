@@ -70,7 +70,7 @@ const RoomSearch = () => {
         }
       } catch (error) {
         console.error('랜드마크 정보를 불러오지 못했습니다:', error);
-        // 에러가 나도 일단 로딩 끝난 것으로 처리하거나 에러 UI 표시
+        // 에러가 나도 일단 로딩 끝난 것으로 처리
         setLandmarksLoaded(true);
       }
     };
@@ -112,6 +112,7 @@ const RoomSearch = () => {
           departure: getLandmarkName(item.departureId),
           destination: getLandmarkName(item.destinationId),
           departureTime: item.departureTime,
+          minCapacity: item.minCapacity, // [수정] 최소 인원 매핑
           maxCapacity: item.maxCapacity,
           currentCapacity: item.currentCount,
           hostName: item.ownerName,
@@ -149,7 +150,7 @@ const RoomSearch = () => {
     setPage(0);
     setHasMore(true);
     fetchRooms(0, true);
-  }, [fetchRooms, landmarksLoaded]); // fetchRooms가 의존성 변경으로 바뀔 때 실행됨
+  }, [fetchRooms, landmarksLoaded]);
 
   // 페이지 변경(스크롤) 시 추가 로딩
   useEffect(() => {

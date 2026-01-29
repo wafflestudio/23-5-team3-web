@@ -20,7 +20,7 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick }) => {
   // 모집 상태 계산
   const isFull = room.currentCapacity >= room.maxCapacity;
 
-  // 요금 포맷팅 (무료 표기 대신 항상 "원" 표기)
+  // 요금 포맷팅
   const feeDisplay = `${room.estimatedFee.toLocaleString()}원`;
 
   return (
@@ -32,11 +32,13 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick }) => {
         <div className="location destination">{room.destination}</div>
       </div>
 
-      {/* 2. 상세 정보 (시간 | 요금) */}
+      {/* 2. 상세 정보 (시간 | 요금 | 최소인원) */}
       <div className="room-details-row">
         <span className="info-item time">🕒 {formattedTime}</span>
         <span className="info-divider">|</span>
-        <span className="info-item fee">💸 {feeDisplay}</span>
+        <span className="info-item fee">{feeDisplay}</span>
+        <span className="info-divider">|</span>
+        <span className="info-item min-cap">최소 {room.minCapacity}명</span>
       </div>
 
       {/* 3. 하단 (방장 이름, 상태) */}
