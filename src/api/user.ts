@@ -6,7 +6,7 @@ interface UsernameUpdateRequest {
 
 export const updateProfilePicture = async (file: File) => {
   const formData = new FormData();
-  formData.append('picture', file);
+  formData.append('image', file);
 
   const response = await apiClient.post('/user/profile/picture', formData, {
     headers: {

@@ -8,41 +8,52 @@ interface RoomCardProps {
 }
 
 const RoomCard: React.FC<RoomCardProps> = ({ room, onClick }) => {
-  // 날짜 포맷팅 (예: 1월 20일 오후 07:30)
+  // 날짜 포맷팅 (예: 1/20 19:30)
   const formattedTime = new Date(room.departureTime).toLocaleString('ko-KR', {
     month: 'numeric',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-    hour12: true,
+    hour12: false,
   });
 
   // 모집 상태 계산
   const isFull = room.currentCapacity >= room.maxCapacity;
 
+  // 요금 포맷팅 (무료 표기 대신 항상 "원" 표기)
+  const feeDisplay = `${room.estimatedFee.toLocaleString()}원`;
+
   return (
     <div className="room-card" onClick={() => onClick(room.roomId)}>
-      {/* 1. 경로 정보 (가장 크게 강조) */}
+      {/* 1. 경로 정보 */}
       <div className="room-route-row">
-        <span className="location departure">{room.departure}</span>
-        <span className="arrow">→</span>
-        <span className="location destination">{room.destination}</span>
+        <div className="location departure">{room.departure}</div>
+        <div className="arrow">→</div>
+        <div className="location destination">{room.destination}</div>
       </div>
 
-      {/* 2. 시간 및 방장 정보 */}
-      <div className="room-info-row">
-        <span className="time-badge">🕒 {formattedTime}</span>
-        <span className="host-name">👑 {room.hostName}</span>
+      {/* 2. 상세 정보 (시간 | 요금) */}
+      <div className="room-details-row">
+        <span className="info-item time">🕒 {formattedTime}</span>
+        <span className="info-divider">|</span>
+        <span className="info-item fee">💸 {feeDisplay}</span>
       </div>
 
-      {/* 3. 하단 상태 (모집중/완료 및 인원) */}
-      <div className="room-status-row">
-        <div className={`status-badge ${isFull ? 'full' : 'open'}`}>
-          {isFull ? '모집완료' : '모집중'}
+      {/* 3. 하단 (방장 이름, 상태) */}
+      <div className="room-footer-row">
+        <div className="host-info">
+          {/* '방장' 라벨 제거됨 */}
+          <span className="host-name">{room.hostName}</span>
         </div>
-        <span className={`headcount ${isFull ? 'full-text' : ''}`}>
-          👤 {room.currentCapacity} / {room.maxCapacity}
-        </span>
+
+        <div className="status-container">
+          <span className={`status-badge ${isFull ? 'full' : 'open'}`}>
+            {isFull ? '완료' : '모집중'}
+          </span>
+          <span className={`headcount ${isFull ? 'full-text' : ''}`}>
+            {room.currentCapacity}/{room.maxCapacity}
+          </span>
+        </div>
       </div>
     </div>
   );

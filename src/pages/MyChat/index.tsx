@@ -1,7 +1,8 @@
 import { isAxiosError } from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { type Pot, getCurrentPot, leaveRoom } from '../../api/room';
+import type { Pot } from '../../api/room';
+import { deleteRoom, getCurrentPot } from '../../api/room';
 import './MyChat.css';
 
 const landmarks = {
@@ -41,7 +42,7 @@ const MyChat = () => {
       // eslint-disable-next-line no-restricted-globals
       if (confirm('정말로 현재 방에서 나가시겠습니까?')) {
         try {
-          await leaveRoom(currentPot.id);
+          await deleteRoom(currentPot.id);
           alert('방에서 나갔습니다.');
           fetchCurrentPot(); // Refresh pot data
         } catch (error: unknown) {

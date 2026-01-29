@@ -5,5 +5,6 @@ export interface RoomData {
   departureTime: string; // 출발 시간 (ISO String)
   currentCapacity: number; // 현재 인원
   maxCapacity: number; // 최대 인원
-  hostName: string; // 방장 이름 (또는 익명 ID)
+  hostName: string; // 방장 이름 (실명)
+  estimatedFee: number; // 예상 요금 (추가됨)
 }
