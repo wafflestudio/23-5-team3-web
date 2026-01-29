@@ -73,3 +73,17 @@ export const getMessages = async (
   );
   return response.data;
 };
+
+// export const getMessages = async (
+//   roomId: number,
+//   cursor: number,
+//   size = 20
+// ): Promise<GetMessagesResponse> => {
+//   const response = await apiClient.get<GetMessagesResponse>(
+//     `/rooms/${roomId}/messages`,
+//     {
+//       params: { cursor, size },
+//     }
+//   );
+//   return response.data;
+// };
