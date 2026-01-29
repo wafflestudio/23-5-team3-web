@@ -2,11 +2,12 @@ import { isAxiosError } from 'axios';
 import { useAtom } from 'jotai';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+// import { getLandmarks } from '../../api/map';
 import { createRoom } from '../../api/room';
 import { isLoggedInAtom } from '../../common/user';
 import './CreateRoom.css';
 
-const LANDMARKS = [
+const initialLandmarks = [
   { id: 1, name: '서울대입구역 3번 출구' },
   { id: 2, name: '낙성대역 버스정류장' },
   { id: 3, name: '낙성대입구 버스정류장' },
@@ -26,11 +27,24 @@ const LANDMARKS = [
 
 const CreateRoom = () => {
   const navigate = useNavigate();
+  const [landmarks, _setLandmarks] = useState(initialLandmarks);
   const [start, setStart] = useState('1');
   const [end, setEnd] = useState('2');
   const [departureTime, setDepartureTime] = useState('');
   const [minCapacity, setMinCapacity] = useState(2);
   const [isLoggedIn] = useAtom(isLoggedInAtom);
+
+  // useEffect(() => {
+  //   const fetchLandmarks = async () => {
+  //     try {
+  //       const data = await getLandmarks();
+  //       setLandmarks(data);
+  //     } catch (error) {
+  //       console.error('Error fetching landmarks:', error);
+  //     }
+  //   };
+  //   fetchLandmarks();
+  // }, []);
 
   const handleMinCapacityChange = (amount: number) => {
     setMinCapacity((prev) => {
@@ -66,8 +80,8 @@ const CreateRoom = () => {
       destinationId,
       departureTime: departureTimeISO,
       minCapacity,
-      maxCapacity: 4, // Hardcoded
-      estimatedFee: 0, // Hardcoded
+      maxCapacity: 4,
+      estimatedFee: 0,
     };
 
     try {
@@ -93,7 +107,7 @@ const CreateRoom = () => {
         <div className="location-select">
           <select value={start} onChange={(e) => setStart(e.target.value)}>
             <option value="">출발지</option>
-            {LANDMARKS.map((landmark) => (
+            {landmarks.map((landmark) => (
               <option key={`start-${landmark.id}`} value={landmark.id}>
                 {landmark.name}
               </option>
@@ -104,7 +118,7 @@ const CreateRoom = () => {
         <div className="location-select">
           <select value={end} onChange={(e) => setEnd(e.target.value)}>
             <option value="">도착지</option>
-            {LANDMARKS.map((landmark) => (
+            {landmarks.map((landmark) => (
               <option key={`end-${landmark.id}`} value={landmark.id}>
                 {landmark.name}
               </option>
@@ -120,6 +134,7 @@ const CreateRoom = () => {
             type="datetime-local"
             value={departureTime}
             onChange={(e) => setDepartureTime(e.target.value)}
+            min={new Date().toISOString().slice(0, 16)}
           />
         </div>
       </div>

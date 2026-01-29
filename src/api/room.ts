@@ -26,6 +26,20 @@ export interface Pot {
   status: 'RECRUITING' | 'WAITING' | 'DEPARTED' | 'COMPLETED' | 'CANCELLED';
 }
 
+export interface Message {
+  id: number;
+  potId: number;
+  senderId: number;
+  text: string;
+  datetimeSendAt: string;
+}
+
+export interface GetMessagesResponse {
+  items: Message[];
+  nextCursor: number;
+  hasNext: boolean;
+}
+
 export const createRoom = async (
   roomDetails: RoomCreationRequest
 ): Promise<RoomCreationResponse> => {
@@ -43,4 +57,18 @@ export const getCurrentPot = async (): Promise<Pot> => {
 
 export const deleteRoom = async (roomId: number): Promise<void> => {
   await apiClient.delete(`/rooms/${roomId}`);
+};
+
+export const getMessages = async (
+  roomId: number,
+  cursor: number,
+  size = 20
+): Promise<GetMessagesResponse> => {
+  const response = await apiClient.get<GetMessagesResponse>(
+    `/rooms/${roomId}/messages`,
+    {
+      params: { cursor, size },
+    }
+  );
+  return response.data;
 };

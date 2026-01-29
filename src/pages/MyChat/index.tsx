@@ -1,7 +1,8 @@
 import { isAxiosError } from 'axios';
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Pot, deleteRoom, getCurrentPot } from '../../api/room';
+import type { Pot } from '../../api/room';
+import { deleteRoom, getCurrentPot } from '../../api/room';
 import './MyChat.css';
 
 const landmarks = {
