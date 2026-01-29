@@ -34,11 +34,12 @@ export interface Message {
   datetimeSendAt: string;
 }
 
-// export interface GetMessagesResponse {
-//   items: Message[];
-//   nextCursor: number;
-//   hasNext: boolean;
-// }
+// [수정] export 제거: 이 파일 내부에서만 사용됨
+interface GetMessagesResponse {
+  items: Message[];
+  nextCursor: number;
+  hasNext: boolean;
+}
 
 export const createRoom = async (
   roomDetails: RoomCreationRequest
@@ -57,6 +58,20 @@ export const getCurrentPot = async (): Promise<Pot> => {
 
 export const deleteRoom = async (roomId: number): Promise<void> => {
   await apiClient.delete(`/rooms/${roomId}`);
+};
+
+export const getMessages = async (
+  roomId: number,
+  cursor: number,
+  size = 20
+): Promise<GetMessagesResponse> => {
+  const response = await apiClient.get<GetMessagesResponse>(
+    `/rooms/${roomId}/messages`,
+    {
+      params: { cursor, size },
+    }
+  );
+  return response.data;
 };
 
 // export const getMessages = async (

@@ -4,7 +4,8 @@ export interface RoomData {
   destination: string; // 도착지 (한글 변환됨)
   departureTime: string; // 출발 시간 (ISO String)
   currentCapacity: number; // 현재 인원
+  minCapacity: number; // [추가] 최소 인원
   maxCapacity: number; // 최대 인원
   hostName: string; // 방장 이름 (실명)
-  estimatedFee: number; // 예상 요금 (추가됨)
+  estimatedFee: number; // 예상 요금
 }
