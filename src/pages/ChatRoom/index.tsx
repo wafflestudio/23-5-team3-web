@@ -1,8 +1,8 @@
 import { useAtom } from 'jotai';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import type { Message } from '../../api/room';
-import { getMessages } from '../../api/room';
+import type { Message, Pot } from '../../api/room';
+import { getMessages, markAsRead } from '../../api/room';
 import { createStompClient } from '../../api/websocket';
 import { isLoggedInAtom, userIdAtom } from '../../common/user';
 import './ChatRoom.css';
@@ -12,11 +12,11 @@ const ChatRoom = () => {
   const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
+  // const [pot, setPot] = useState<Pot | null>(null); // Needed for unread count
+  const [_readStatuses, setReadStatuses] = useState<Record<number, number>>({});
   const [_loading, setLoading] = useState(true);
-  const [hasNext, setHasNext] = useState(true);
-  const [cursor, setCursor] = useState(Date.now());
   const [isLoggedIn] = useAtom(isLoggedInAtom);
-  const [userId] = useAtom(userIdAtom);
+  const [userId, setUserId] = useAtom(userIdAtom);
   const [newMessage, setNewMessage] = useState('');
   const clientRef = useRef<Client | null>(null);
 
@@ -27,42 +27,54 @@ const ChatRoom = () => {
     }
   }, [isLoggedIn, navigate]);
 
-  const fetchMessages = useCallback(async () => {
-    if (!roomId || !hasNext) return;
-
-    setLoading(true);
-    try {
-      const {
-        items,
-        nextCursor,
-        hasNext: newHasNext,
-      } = await getMessages(parseInt(roomId, 10), cursor);
-      setMessages((prev) => [...items, ...prev]); // Prepend old messages
-      setCursor(nextCursor);
-      setHasNext(newHasNext);
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [roomId, cursor, hasNext]);
-
+  // This useEffect will run once on mount to fetch initial messages.
   useEffect(() => {
-    if (isLoggedIn) {
-      fetchMessages();
+    if (isLoggedIn && roomId) {
+      const fetchInitialMessages = async () => {
+        setLoading(true);
+        try {
+          const { items, readStatuses: newReadStatuses } = await getMessages(
+            parseInt(roomId, 10),
+            null
+          );
+          setMessages(items); // API returns newest first
+          setReadStatuses(newReadStatuses);
+        } catch (error) {
+          console.error('Error fetching messages:', error);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchInitialMessages();
     }
-  }, [isLoggedIn, fetchMessages]);
+  }, [isLoggedIn, roomId]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: We don't want to re-run this effect when userId changes
   useEffect(() => {
-    if (!roomId || !userId) return;
+    if (!roomId || !isLoggedIn) return;
 
     const client = createStompClient();
     clientRef.current = client;
 
     client.onConnect = () => {
+      // Subscription for new messages
       client.subscribe(`/sub/rooms/${roomId}`, (message) => {
         const receivedMessage = JSON.parse(message.body);
+        if (!userId) {
+          setUserId(receivedMessage.senderId);
+        }
         setMessages((prevMessages) => [receivedMessage, ...prevMessages]);
+      });
+
+      // Subscription for read status updates
+      client.subscribe(`/sub/rooms/${roomId}/read`, (message) => {
+        const { userId: readUserId, lastReadMessageId } = JSON.parse(
+          message.body
+        );
+        setReadStatuses((prev) => ({
+          ...prev,
+          [readUserId]: lastReadMessageId,
+        }));
       });
     };
 
@@ -71,26 +83,42 @@ const ChatRoom = () => {
     return () => {
       client.deactivate();
     };
-  }, [roomId, userId]);
+  }, [roomId, isLoggedIn]);
 
   const sendMessage = () => {
-    if (clientRef.current && newMessage.trim() !== '' && roomId && userId) {
+    if (clientRef.current && newMessage.trim() !== '' && roomId) {
       const messageToSend = {
         text: newMessage,
       };
       clientRef.current.publish({
-        destination: `/pub/rooms/${roomId}`,
+        destination: `/pub/rooms/${roomId}/messages`,
         body: JSON.stringify(messageToSend),
       });
       setNewMessage('');
     }
   };
 
+  /*
+  const getUnreadCount = (messageId: number) => {
+    if (!pot) return 0;
+    const totalParticipants = pot.currentCount;
+    let readCount = 0;
+    for (const id in readStatuses) {
+      if (readStatuses[id] >= messageId) {
+        readCount++;
+      }
+    }
+    const unreadCount = totalParticipants - readCount;
+    return unreadCount > 0 ? unreadCount : 0;
+  };
+  */
+
   return (
     <div className="chat-room-container">
       <div className="messages-container">
         {messages.map((msg, index) => {
           const isMyMessage = msg.senderId === userId;
+          // const unreadCount = getUnreadCount(msg.id);
           return (
             <div
               key={msg.id || `msg-${index}`}
@@ -98,10 +126,15 @@ const ChatRoom = () => {
                 isMyMessage ? 'my-message' : 'other-message'
               }`}
             >
-              <p className="message-text">{msg.text}</p>
-              <span className="message-time">
-                {new Date(msg.datetimeSendAt).toLocaleTimeString()}
-              </span>
+              {/* {isMyMessage && unreadCount > 0 && (
+                <span className="unread-count">{unreadCount}</span>
+              )} */}
+              <div className="message-content">
+                <p className="message-text">{msg.text}</p>
+                <span className="message-time">
+                  {new Date(msg.datetimeSendAt).toLocaleTimeString()}
+                </span>
+              </div>
             </div>
           );
         })}

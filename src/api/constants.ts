@@ -1,1 +1,1 @@
-export const BACKEND_URL = 'https://snuxi.com';
+export const BACKEND_URL = 'https://api.snuxi.com';

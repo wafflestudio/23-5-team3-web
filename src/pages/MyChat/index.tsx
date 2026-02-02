@@ -82,6 +82,9 @@ const MyChat = () => {
                     ]
                   }
                 </span>
+                {currentPot.unreadCount > 0 && (
+                  <span className="unread-badge">{currentPot.unreadCount}</span>
+                )}
               </div>
               <div className="pot-meta">
                 <span>

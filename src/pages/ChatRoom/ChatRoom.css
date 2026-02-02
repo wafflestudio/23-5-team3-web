@@ -16,21 +16,39 @@
 }
 
 .message-bubble {
-  padding: 0.5rem 1rem;
-  border-radius: 1rem;
+  display: flex;
+  align-items: flex-end;
   margin-bottom: 0.5rem;
   max-width: 70%;
 }
 
 .my-message {
   align-self: flex-end;
-  background-color: #007bff;
-  color: white;
+  flex-direction: row-reverse;
 }
 
 .other-message {
   align-self: flex-start;
+}
+
+.message-content {
+  padding: 0.5rem 1rem;
+  border-radius: 1rem;
+}
+
+.my-message .message-content {
+  background-color: #007bff;
+  color: white;
+}
+
+.other-message .message-content {
   background-color: #f1f0f0;
+}
+
+.unread-count {
+  font-size: 0.75rem;
+  color: #888;
+  margin: 0 0.5rem;
 }
 
 .message-text {
