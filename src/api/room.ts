@@ -24,6 +24,7 @@ export interface Pot {
   currentCount: number;
   estimatedFee: number;
   status: 'RECRUITING' | 'WAITING' | 'DEPARTED' | 'COMPLETED' | 'CANCELLED';
+  unreadCount: number;
 }
 
 export interface Message {
@@ -37,8 +38,9 @@ export interface Message {
 // [수정] export 제거: 이 파일 내부에서만 사용됨
 interface GetMessagesResponse {
   items: Message[];
-  nextCursor: number;
+  nextCursor: number | null;
   hasNext: boolean;
+  readStatuses: Record<number, number>;
 }
 
 export const createRoom = async (
@@ -62,7 +64,7 @@ export const deleteRoom = async (roomId: number): Promise<void> => {
 
 export const getMessages = async (
   roomId: number,
-  cursor: number,
+  cursor: number | null,
   size = 20
 ): Promise<GetMessagesResponse> => {
   const response = await apiClient.get<GetMessagesResponse>(
@@ -72,6 +74,15 @@ export const getMessages = async (
     }
   );
   return response.data;
+};
+
+export const getPotById = async (roomId: number): Promise<Pot> => {
+  const response = await apiClient.get<Pot>(`/rooms/${roomId}`);
+  return response.data;
+};
+
+export const markAsRead = async (roomId: number): Promise<void> => {
+  await apiClient.patch(`/rooms/${roomId}/read`);
 };
 
 // export const getMessages = async (

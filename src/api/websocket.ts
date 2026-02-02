@@ -1,7 +1,7 @@
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
-const WEBSOCKET_URL = 'https://snuxi.com/ws';
+const WEBSOCKET_URL = 'https://snuxi.com/ws-stomp';
 
 export const createStompClient = () => {
   const client = new Client({
