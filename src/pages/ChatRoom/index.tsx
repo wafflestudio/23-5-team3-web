@@ -1,8 +1,8 @@
 import { useAtom } from 'jotai';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react'; //import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import type { Message, Pot } from '../../api/room';
-import { getMessages, markAsRead } from '../../api/room';
+import type { Message } from '../../api/room'; // import type { Message, Pot } from '../../api/room';
+import { getMessages } from '../../api/room'; // import { getMessages, markAsRead } from '../../api/room';
 import { createStompClient } from '../../api/websocket';
 import { isLoggedInAtom, userIdAtom } from '../../common/user';
 import './ChatRoom.css';
@@ -55,6 +55,7 @@ const ChatRoom = () => {
 
     const client = createStompClient();
     clientRef.current = client;
+    // console.log('Connecting to WebSocket');
 
     client.onConnect = () => {
       // Subscription for new messages
