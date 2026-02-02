@@ -76,12 +76,14 @@ export const getMessages = async (
   return response.data;
 };
 
+/*
 export const markAsRead = async (
   roomId: number,
   messageId: number
 ): Promise<void> => {
   await apiClient.patch(`/rooms/${roomId}/read`, { messageId });
 };
+*/
 
 // export const getMessages = async (
 //   roomId: number,
