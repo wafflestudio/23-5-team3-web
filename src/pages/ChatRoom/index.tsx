@@ -64,6 +64,7 @@ const ChatRoom = () => {
     }
   }, [isLoggedIn, fetchMessages]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: We don't want to re-run this effect when userId changes
   useEffect(() => {
     if (!roomId || !isLoggedIn) return;
 
@@ -85,7 +86,6 @@ const ChatRoom = () => {
     return () => {
       client.deactivate();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roomId, isLoggedIn]);
 
   const sendMessage = () => {
