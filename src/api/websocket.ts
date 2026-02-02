@@ -1,11 +1,14 @@
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 
-const WEBSOCKET_URL = 'https://snuxi.com/ws-stomp';
+const WEBSOCKET_URL = 'https://api.snuxi.com/ws';
 
 export const createStompClient = () => {
   const client = new Client({
-    webSocketFactory: () => new SockJS(WEBSOCKET_URL),
+    // @ts-ignore
+    webSocketFactory: () =>
+      // @ts-ignore
+      new SockJS(WEBSOCKET_URL, null, { withCredentials: true }),
     reconnectDelay: 5000,
     heartbeatIncoming: 4000,
     heartbeatOutgoing: 4000,

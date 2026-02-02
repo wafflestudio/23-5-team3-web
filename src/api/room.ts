@@ -76,13 +76,11 @@ export const getMessages = async (
   return response.data;
 };
 
-export const getPotById = async (roomId: number): Promise<Pot> => {
-  const response = await apiClient.get<Pot>(`/rooms/${roomId}`);
-  return response.data;
-};
-
-export const markAsRead = async (roomId: number): Promise<void> => {
-  await apiClient.patch(`/rooms/${roomId}/read`);
+export const markAsRead = async (
+  roomId: number,
+  messageId: number
+): Promise<void> => {
+  await apiClient.patch(`/rooms/${roomId}/read`, { messageId });
 };
 
 // export const getMessages = async (

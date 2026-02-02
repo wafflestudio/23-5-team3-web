@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-  baseURL: 'https://snuxi.com',
+  baseURL: 'https://api.snuxi.com',
   withCredentials: true,
 });
 
