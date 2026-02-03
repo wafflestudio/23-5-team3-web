@@ -1,68 +1,165 @@
+/* 전체 컨테이너: RoomSearch와 동일한 레이아웃 적용 */
 .my-chat-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 60px); /* NavBar 높이 제외 */
+  overflow: hidden;
+  background-color: #ffffff;
+
+  /* 모바일 뷰 시뮬레이션 (가운데 정렬) */
+  max-width: 480px;
+  margin: 0 auto;
   padding: 20px;
 }
 
+/* 로딩 화면 스타일 */
+.loading-container {
+  align-items: center;
+  justify-content: center;
+}
+.loading-text {
+  color: #868e96;
+  font-size: 1rem;
+}
+
+/* 페이지 제목 */
+.page-title {
+  font-size: 1.5rem;
+  margin-bottom: 20px;
+  color: #333;
+  text-align: center;
+}
+
+/* [수정] 팟 없음 메시지 스타일 (검정색, 강조) */
+.no-pot-message {
+  text-align: center;
+  color: #000000; /* 검정색으로 변경 */
+  margin-top: 100px; /* 중앙에 가깝게 위치 조정 */
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+/* 팟 카드 스타일 */
 .current-pot-card {
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  margin-bottom: 10px;
-  padding: 15px;
-  transition: background-color 0.2s;
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid #f1f3f5;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
   display: flex;
   align-items: center;
+  justify-content: space-between;
 }
 
 .current-pot-card:hover {
-  background-color: #f5f5f5;
+  background-color: #f8f9fa;
 }
 
 .pot-link {
   flex-grow: 1;
   text-decoration: none;
   color: inherit;
+  margin-right: 15px;
 }
 
 .pot-details {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .pot-info {
-  font-size: 1.2em;
   display: flex;
   align-items: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #212529;
+}
+
+.location {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}
+
+.arrow {
+  margin: 0 8px;
+  color: #adb5bd;
+  font-weight: normal;
 }
 
 .unread-badge {
   background-color: #ff4d4d;
   color: white;
-  border-radius: 50%;
-  padding: 2px 6px;
-  font-size: 0.8em;
-  margin-left: 10px;
-  min-width: 10px;
-  text-align: center;
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-size: 0.75rem;
+  margin-left: 8px;
+  font-weight: bold;
 }
 
 .pot-meta {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  font-size: 0.9em;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
   color: #666;
 }
 
-.delete-button {
-  background-color: #ff4d4d;
-  color: white;
-  border: none;
-  padding: 8px 12px;
+.time {
+  background-color: #f1f3f5;
+  padding: 2px 6px;
   border-radius: 4px;
-  cursor: pointer;
-  margin-left: 20px;
 }
 
-.delete-button:hover {
-  background-color: #ff1a1a;
+/* 나가기 버튼 스타일 */
+.leave-button {
+  background-color: #ff6b6b;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+  white-space: nowrap;
+}
+
+.leave-button:hover {
+  background-color: #fa5252;
+}
+
+/* 상태 배지 스타일 */
+.status-badge {
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: 700;
+  margin-left: 8px;
+}
+
+.status-badge.recruiting {
+  background-color: #e6fcf5;
+  color: #0ca678;
+}
+
+.status-badge.success {
+  background-color: #e7f5ff;
+  color: #1c7ed6;
+}
+
+.status-badge.closed {
+  background-color: #f1f3f5;
+  color: #adb5bd;
+}
+
+/* 인원수 스타일 */
+.headcount-fixed {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #000000;
+  margin-left: 8px;
 }

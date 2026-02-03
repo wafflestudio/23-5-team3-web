@@ -8,7 +8,7 @@ interface RoomCardProps {
 }
 
 const RoomCard: React.FC<RoomCardProps> = ({ room, onClick }) => {
-  // 날짜 포맷팅 (예: 1/20 19:30)
+  // 날짜 포맷팅
   const formattedTime = new Date(room.departureTime).toLocaleString('ko-KR', {
     month: 'numeric',
     day: 'numeric',
@@ -17,11 +17,24 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick }) => {
     hour12: false,
   });
 
-  // 모집 상태 계산
-  const isFull = room.currentCapacity >= room.maxCapacity;
-
   // 요금 포맷팅
   const feeDisplay = `${room.estimatedFee.toLocaleString()}원`;
+
+  // 상태에 따른 텍스트 및 스타일 결정
+  let statusText = '모집중';
+  let statusClass = 'recruiting';
+
+  if (room.status === 'SUCCESS') {
+    statusText = '모집완료';
+    statusClass = 'success';
+  } else if (room.status === 'RECRUITING') {
+    statusText = '모집중';
+    statusClass = 'recruiting';
+  } else {
+    // FAILED, EXPIRED 등
+    statusText = '마감';
+    statusClass = 'closed';
+  }
 
   return (
     <div className="room-card" onClick={() => onClick(room.roomId)}>
@@ -32,7 +45,7 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick }) => {
         <div className="location destination">{room.destination}</div>
       </div>
 
-      {/* 2. 상세 정보 (시간 | 요금 | 최소인원) */}
+      {/* 2. 상세 정보 */}
       <div className="room-details-row">
         <span className="info-item time">🕒 {formattedTime}</span>
         <span className="info-divider">|</span>
@@ -41,18 +54,17 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick }) => {
         <span className="info-item min-cap">최소 {room.minCapacity}명</span>
       </div>
 
-      {/* 3. 하단 (방장 이름, 상태) */}
+      {/* 3. 하단 (방장, 상태/인원 분리) */}
       <div className="room-footer-row">
         <div className="host-info">
-          {/* '방장' 라벨 제거됨 */}
           <span className="host-name">{room.hostName}</span>
         </div>
 
         <div className="status-container">
-          <span className={`status-badge ${isFull ? 'full' : 'open'}`}>
-            {isFull ? '완료' : '모집중'}
-          </span>
-          <span className={`headcount ${isFull ? 'full-text' : ''}`}>
+          {/* 상태 배지 (모집중/모집완료) */}
+          <span className={`status-badge ${statusClass}`}>{statusText}</span>
+          {/* 인원수 (항상 검정색) */}
+          <span className="headcount-fixed">
             {room.currentCapacity}/{room.maxCapacity}
           </span>
         </div>
