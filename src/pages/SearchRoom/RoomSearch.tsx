@@ -39,7 +39,7 @@ const RoomSearch = () => {
 
   // --- 상태 관리 ---
   const [landmarks, setLandmarks] = useState<Landmark[]>([]);
-  const [landmarksLoaded, setLandmarksLoaded] = useState(false); // 랜드마크 로딩 여부
+  const [landmarksLoaded, setLandmarksLoaded] = useState(false);
 
   const [departureId, setDepartureId] = useState<number>(0);
   const [destinationId, setDestinationId] = useState<number>(0);
@@ -59,25 +59,23 @@ const RoomSearch = () => {
   const loadMoreRef = useRef<HTMLDivElement>(null);
   const observerRef = useRef<IntersectionObserver | null>(null);
 
-  // 1. 랜드마크 데이터 먼저 불러오기
+  // 1. 랜드마크 데이터 불러오기
   useEffect(() => {
     const fetchLandmarksData = async () => {
       try {
         const data = await getLandmarks();
         if (data && data.landmarks) {
           setLandmarks(data.landmarks);
-          setLandmarksLoaded(true); // 로딩 완료 처리
+          setLandmarksLoaded(true);
         }
       } catch (error) {
         console.error('랜드마크 정보를 불러오지 못했습니다:', error);
-        // 에러가 나도 일단 로딩 끝난 것으로 처리
         setLandmarksLoaded(true);
       }
     };
     fetchLandmarksData();
   }, []);
 
-  // 랜드마크 이름 조회 헬퍼
   const getLandmarkName = useCallback(
     (id: number) => {
       return landmarks.find((l) => l.id === id)?.name || '알 수 없음';
@@ -85,10 +83,9 @@ const RoomSearch = () => {
     [landmarks]
   );
 
-  // 2. 방 목록 조회 함수 (랜드마크 로딩 후에만 실행)
+  // 2. 방 목록 조회
   const fetchRooms = useCallback(
     async (pageNumber: number, isNewSearch: boolean) => {
-      // 랜드마크가 아직 로딩되지 않았으면 API 호출 안 함
       if (!landmarksLoaded) return;
       if (loadingRef.current) return;
 
@@ -112,11 +109,12 @@ const RoomSearch = () => {
           departure: getLandmarkName(item.departureId),
           destination: getLandmarkName(item.destinationId),
           departureTime: item.departureTime,
-          minCapacity: item.minCapacity, // [수정] 최소 인원 매핑
+          minCapacity: item.minCapacity,
           maxCapacity: item.maxCapacity,
           currentCapacity: item.currentCount,
           hostName: item.ownerName,
           estimatedFee: item.estimatedFee,
+          status: item.status, // [중요] 상태값 매핑 추가
         }));
 
         const isLast = response.data.last ?? newRooms.length === 0;
@@ -227,7 +225,6 @@ const RoomSearch = () => {
     setter(Number(e.target.value));
   };
 
-  // 랜드마크 로딩 전에는 로딩 화면 표시
   if (!landmarksLoaded) {
     return (
       <div className="search-container loading-container">
@@ -238,7 +235,6 @@ const RoomSearch = () => {
 
   return (
     <div className="search-container">
-      {/* 상단 고정 헤더 */}
       <div className="sticky-header">
         <h1>택시팟 찾기</h1>
         <div className="search-filter-card">
@@ -270,7 +266,6 @@ const RoomSearch = () => {
         </div>
       </div>
 
-      {/* 스크롤 가능한 목록 영역 */}
       <div className="room-list-scroll">
         {rooms.length > 0
           ? rooms.map((room) => (
@@ -291,7 +286,6 @@ const RoomSearch = () => {
         )}
       </div>
 
-      {/* 모달 */}
       {(showLoginModal || showJoinModal) && (
         <div style={modalOverlayStyle}>
           <div style={modalContentStyle}>

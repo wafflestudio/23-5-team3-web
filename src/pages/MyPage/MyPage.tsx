@@ -1,6 +1,7 @@
 import { isAxiosError } from 'axios';
 import { useAtom } from 'jotai';
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
+import { BACKEND_URL } from '../../api/constants';
 import { updateProfilePicture, updateUsername } from '../../api/user';
 import {
   emailAtom,
@@ -16,22 +17,23 @@ const MyPage = () => {
   const [nickname, setNickname] = useAtom(nicknameAtom);
   const [profileImage, setProfileImage] = useAtom(profileImageAtom);
 
-  // Local state for editing mode and file object
+  // 로컬 상태 관리 (수정 모드, 파일 객체 등)
   const [isEditing, setIsEditing] = useState(false);
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
 
-  // Keep a copy of the original nickname for cancellation
+  // 취소 시 되돌리기 위한 원래 이름 저장
   const [originalNickname, setOriginalNickname] = useState(nickname);
 
   // 파일 입력창(input type="file")을 열기 위한 ref
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    if (!isLoggedIn) {
-      // alert("로그인이 필요한 서비스입니다.");
-      // window.location.href = '/';
-    }
-  }, [isLoggedIn]);
+  // 로그인 핸들러 (버튼 클릭 시 호출)
+  const handleLogin = () => {
+    const frontendRedirectUri = window.location.origin;
+    const encodedUri = encodeURIComponent(frontendRedirectUri);
+    const googleLoginUrl = `${BACKEND_URL}/login?redirect_uri=${encodedUri}`;
+    window.location.href = googleLoginUrl;
+  };
 
   // 이미지 업로드 핸들러 (미리보기 기능)
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,7 +43,7 @@ const MyPage = () => {
       const reader = new FileReader();
       reader.onloadend = () => {
         const result = reader.result as string;
-        setProfileImage(result); // Update atom for immediate preview
+        setProfileImage(result);
       };
       reader.readAsDataURL(file);
     }
@@ -56,20 +58,18 @@ const MyPage = () => {
 
   const handleEdit = () => {
     setIsEditing(true);
-    setOriginalNickname(nickname); // Save current nickname on edit start
+    setOriginalNickname(nickname);
   };
 
   // 저장 버튼 클릭 시
   const handleSave = async () => {
     try {
       if (profileImageFile) {
-        const response = await updateProfilePicture(profileImageFile);
-        setProfileImage(response.profileImageUrl); // Update global state
+        const newImageUrl = await updateProfilePicture(profileImageFile);
+        setProfileImage(newImageUrl);
       }
 
-      // Here you would also have an API call to update the nickname
       await updateUsername(nickname);
-      // For now, we just set the atom, which is already done by the input's onChange
 
       setIsEditing(false);
       alert('프로필이 수정되었습니다!');
@@ -80,16 +80,32 @@ const MyPage = () => {
         console.error('An unexpected error occurred:', error);
       }
       alert('프로필 수정에 실패했습니다.');
-      setNickname(originalNickname); // Revert on failure
+      setNickname(originalNickname);
     }
   };
 
   const handleCancel = () => {
     setIsEditing(false);
-    setNickname(originalNickname); // Restore original nickname
-    // The profile image will also revert because we're not saving the file change
-    // You might need a more robust way to handle image cancellation if needed
+    setNickname(originalNickname);
   };
+
+  // [수정] 로그인되지 않은 경우 안내 문구와 로그인 버튼 표시
+  if (!isLoggedIn) {
+    return (
+      <div className="mypage-container" style={{ marginTop: '20vh' }}>
+        <h2 style={{ marginBottom: '20px', color: '#333' }}>
+          로그인이 필요한 서비스입니다
+        </h2>
+        <button
+          className="save-btn" // 기존 스타일 재사용 (파란색 버튼)
+          onClick={handleLogin}
+          style={{ fontSize: '1rem', padding: '12px 30px' }}
+        >
+          로그인
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="mypage-container">
@@ -121,7 +137,7 @@ const MyPage = () => {
           </div>
 
           <div className="info-row">
-            <label>별명</label>
+            <label>이름</label>
             {isEditing ? (
               <input
                 type="text"

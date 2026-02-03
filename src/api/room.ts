@@ -13,6 +13,7 @@ interface RoomCreationResponse {
   createdPotId: number;
 }
 
+// 서버 Enum과 일치하는 상태값 정의
 export interface Pot {
   id: number;
   ownerId: number;
@@ -23,7 +24,7 @@ export interface Pot {
   maxCapacity: number;
   currentCount: number;
   estimatedFee: number;
-  status: 'RECRUITING' | 'WAITING' | 'DEPARTED' | 'COMPLETED' | 'CANCELLED';
+  status: 'RECRUITING' | 'SUCCESS' | 'FAILED' | 'EXPIRED';
   unreadCount: number;
 }
 
@@ -35,7 +36,6 @@ export interface Message {
   datetimeSendAt: string;
 }
 
-// [수정] export 제거: 이 파일 내부에서만 사용됨
 interface GetMessagesResponse {
   items: Message[];
   nextCursor: number | null;
@@ -53,13 +53,23 @@ export const createRoom = async (
   return response.data;
 };
 
-export const getCurrentPot = async (): Promise<Pot> => {
+// [수정] 응답이 비어있으면 null을 반환하도록 처리
+export const getCurrentPot = async (): Promise<Pot | null> => {
   const response = await apiClient.get<Pot>('/users/me/pot');
+  // axios는 body가 비어있으면 빈 문자열("")을 줄 수 있음
+  if (!response.data) {
+    return null;
+  }
   return response.data;
 };
 
-export const deleteRoom = async (roomId: number): Promise<void> => {
-  await apiClient.delete(`/rooms/${roomId}`);
+// export const deleteRoom = async (roomId: number): Promise<void> => {
+//   await apiClient.delete(`/rooms/${roomId}`);
+// };
+
+// 방 나가기 API
+export const leaveRoom = async (roomId: number): Promise<void> => {
+  await apiClient.post(`/rooms/${roomId}/leave`);
 };
 
 export const getMessages = async (
@@ -75,7 +85,6 @@ export const getMessages = async (
   );
   return response.data;
 };
-
 /*
 export const markAsRead = async (
   roomId: number,

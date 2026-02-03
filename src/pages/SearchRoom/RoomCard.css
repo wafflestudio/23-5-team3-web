@@ -107,26 +107,27 @@
   padding: 4px 8px;
   border-radius: 6px;
   font-weight: 700;
+  margin-left: 8px;
 }
 
-/* 모집중 색상 */
-.status-badge.open {
+.status-badge.recruiting {
   background-color: #e6fcf5;
   color: #0ca678;
 }
 
-/* 모집완료 색상 */
-.status-badge.full {
+.status-badge.success {
+  background-color: #e7f5ff;
+  color: #1c7ed6;
+}
+
+.status-badge.closed {
   background-color: #f1f3f5;
   color: #adb5bd;
 }
 
-.headcount {
+.headcount-fixed {
   font-weight: 600;
-  color: #343a40;
   font-size: 0.9rem;
-}
-
-.headcount.full-text {
-  color: #adb5bd;
+  color: #000000;
+  margin-left: 8px; /* 배지와의 간격 */
 }
