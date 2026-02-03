@@ -4,6 +4,11 @@ interface UsernameUpdateRequest {
   username: string;
 }
 
+export const getUserId = async (): Promise<number> => {
+  const response = await apiClient.get<number>('/user/id');
+  return response.data;
+};
+
 export const updateProfilePicture = async (file: File) => {
   const formData = new FormData();
   formData.append('image', file);

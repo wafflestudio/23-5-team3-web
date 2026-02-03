@@ -1,19 +1,20 @@
 import { useSetAtom } from 'jotai';
 import { useEffect, useState } from 'react';
 import { type User, getMe } from './api/auth';
+import { getUserId } from './api/user';
 import {
   emailAtom,
   isLoggedInAtom,
   nicknameAtom,
   profileImageAtom,
-  // userIdAtom,
+  userIdAtom,
 } from './common/user';
 import Router from './router/Router';
 
 const App = () => {
   const [loading, setLoading] = useState(true);
   const setIsLoggedIn = useSetAtom(isLoggedInAtom);
-  // const setUserId = useSetAtom(userIdAtom);
+  const setUserId = useSetAtom(userIdAtom);
   const setEmail = useSetAtom(emailAtom);
   const setNickname = useSetAtom(nicknameAtom);
   const setProfileImage = useSetAtom(profileImageAtom);
@@ -21,9 +22,9 @@ const App = () => {
   useEffect(() => {
     const checkUser = async () => {
       try {
-        const user: User = await getMe();
+        const [user, userId] = await Promise.all([getMe(), getUserId()]);
         setIsLoggedIn(true);
-        // setUserId(user.id);
+        setUserId(userId);
         setEmail(user.email);
         setNickname(user.username);
         setProfileImage(user.profileImageUrl);
@@ -34,7 +35,7 @@ const App = () => {
       }
     };
     checkUser();
-  }, [setIsLoggedIn, setEmail, setNickname, setProfileImage]); //setUserId 뺌
+  }, [setIsLoggedIn, setUserId, setEmail, setNickname, setProfileImage]);
 
   if (loading) {
     return <div>Loading...</div>;
