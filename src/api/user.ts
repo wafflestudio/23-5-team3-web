@@ -19,7 +19,7 @@ export const updateProfilePicture = async (file: File) => {
 
 export const updateUsername = async (username: string) => {
   const response = await apiClient.patch<UsernameUpdateRequest>(
-    '/user/profile',
+    '/user/profile/name',
     { username }
   );
   return response.data;
