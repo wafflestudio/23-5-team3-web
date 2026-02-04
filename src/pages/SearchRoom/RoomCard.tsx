@@ -37,11 +37,16 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick }) => {
 
   return (
     <div className="room-card" onClick={() => onClick(room.roomId)}>
-      {/* 1. 경로 정보 */}
+      {/* 1. 경로 정보 (위아래 배치) */}
       <div className="room-route-row">
+        {/* 첫 번째 줄: 출발지 */}
         <div className="location departure">{room.departure}</div>
-        <div className="arrow">→</div>
-        <div className="location destination">{room.destination}</div>
+
+        {/* 두 번째 줄: 화살표 + 도착지 */}
+        <div className="route-destination-row">
+          <div className="arrow">→</div>
+          <div className="location destination">{room.destination}</div>
+        </div>
       </div>
 
       {/* 2. 상세 정보 */}

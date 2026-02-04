@@ -32,7 +32,6 @@ const MyChat = () => {
   const fetchCurrentPot = useCallback(async () => {
     try {
       const pot = await getCurrentPot();
-      // [수정] 받아온 pot이 null이나 빈 값이면 null로 상태 업데이트
       if (!pot) {
         setCurrentPot(null);
       } else {
@@ -64,7 +63,6 @@ const MyChat = () => {
         try {
           await leaveRoom(currentPot.id);
           alert('방에서 나갔습니다.');
-          // 방 나가기 성공 후 상태 갱신
           fetchCurrentPot();
         } catch (_error: unknown) {
           alert('방에서 나가는 중 오류가 발생했습니다.');
@@ -100,7 +98,6 @@ const MyChat = () => {
 
   return (
     <div className="my-chat-container">
-      {/* [수정] !currentPot 조건으로 변경하여 빈 문자열 등이 와도 처리되도록 함 */}
       {!currentPot ? (
         <div className="no-pot-message">현재 참여 중인 팟이 없습니다.</div>
       ) : (
@@ -109,20 +106,25 @@ const MyChat = () => {
           <div className="current-pot-card">
             <Link to={`/chat/${currentPot.id}`} className="pot-link">
               <div className="pot-details">
+                {/* [수정] 경로 정보 위아래 2줄 배치 */}
                 <div className="pot-info">
-                  <span className="location">
+                  <div className="location">
                     {landmarks[currentPot.departureId] || '알 수 없음'}
-                  </span>{' '}
-                  <span className="arrow">→</span>{' '}
-                  <span className="location">
-                    {landmarks[currentPot.destinationId] || '알 수 없음'}
-                  </span>
-                  {currentPot.unreadCount > 0 && (
-                    <span className="unread-badge">
-                      {currentPot.unreadCount}
+                  </div>
+
+                  <div className="route-destination-row">
+                    <span className="arrow">→</span>
+                    <span className="location">
+                      {landmarks[currentPot.destinationId] || '알 수 없음'}
                     </span>
-                  )}
+                    {currentPot.unreadCount > 0 && (
+                      <span className="unread-badge">
+                        {currentPot.unreadCount}
+                      </span>
+                    )}
+                  </div>
                 </div>
+
                 <div className="pot-meta">
                   <span className="time">
                     {new Date(currentPot.departureTime).toLocaleString(

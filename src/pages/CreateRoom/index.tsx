@@ -139,7 +139,7 @@ const CreateRoom = () => {
 
   return (
     <div className="create-container">
-      <h1>방 개설하기</h1>
+      <h1>택시팟 만들기</h1>
 
       <div className="card location-box">
         <div className="location-select">
@@ -218,7 +218,7 @@ const CreateRoom = () => {
       </div>
 
       <button className="create-button" onClick={handleCreateRoom}>
-        방 개설하기
+        택시팟 만들기
       </button>
     </div>
   );
