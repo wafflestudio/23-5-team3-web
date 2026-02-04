@@ -87,7 +87,7 @@ const MyChat = () => {
 
   if (currentPot) {
     if (currentPot.status === 'SUCCESS') {
-      statusText = '모집완료';
+      statusText = '출발확정';
       statusClass = 'success';
     } else if (currentPot.status === 'RECRUITING') {
       statusText = '모집중';
