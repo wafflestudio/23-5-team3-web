@@ -1,14 +1,14 @@
 import {
+  type DetailedHTMLProps,
+  type HTMLAttributes,
+  type JSX,
   useState,
-  DetailedHTMLProps,
-  HTMLAttributes,
-  JSX,
 } from 'react';
 import { useIntersectionObserver } from '../hooks/useIntersectionObserver';
 
-export type InfiniteScrollEndHandler = () => void;
+type InfiniteScrollEndHandler = () => void;
 
-export interface InfiniteScrollProps
+interface InfiniteScrollProps
   extends DetailedHTMLProps<HTMLAttributes<HTMLDivElement>, HTMLDivElement> {
   /**
    * 비활성화 여부

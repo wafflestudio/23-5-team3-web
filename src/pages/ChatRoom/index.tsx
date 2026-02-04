@@ -1,11 +1,17 @@
 import { useAtom } from 'jotai';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import InfiniteScroll from '../../components/InfiniteScroll';
 import type { Message } from '../../api/room';
 import { getMessages } from '../../api/room';
 import { createStompClient } from '../../api/websocket';
 import { isLoggedInAtom, userIdAtom } from '../../common/user';
+import InfiniteScroll from '../../components/InfiniteScroll';
 import './ChatRoom.css';
 import type { Client } from '@stomp/stompjs';
 
@@ -59,7 +65,12 @@ const ChatRoom = () => {
       const fetchInitial = async () => {
         setLoading(true);
         try {
-          const { items, nextCursor, hasNext: newHasNext, readStatuses: newReadStatuses } = await getMessages(parseInt(roomId, 10), null);
+          const {
+            items,
+            nextCursor,
+            hasNext: newHasNext,
+            readStatuses: newReadStatuses,
+          } = await getMessages(parseInt(roomId, 10), null);
           setMessages(items);
           setCursor(nextCursor);
           setHasNext(newHasNext);
@@ -75,7 +86,11 @@ const ChatRoom = () => {
   }, [isLoggedIn, roomId]);
 
   useLayoutEffect(() => {
-    if (isInitialLoad.current && scrollContainerRef.current && messages.length > 0) {
+    if (
+      isInitialLoad.current &&
+      scrollContainerRef.current &&
+      messages.length > 0
+    ) {
       const container = scrollContainerRef.current;
       container.scrollTop = container.scrollHeight;
       isInitialLoad.current = false;
@@ -134,47 +149,51 @@ const ChatRoom = () => {
           disabled={!hasNext || loading}
         >
           {messages.map((msg, index) => {
-                      const isMyMessage = msg.senderId === userId;
-                      const isBotMessage = msg.senderId === 7;
-                      return (
-                        <div
-                          key={msg.id || `msg-${index}`}
-                          className={`message-bubble ${
-                            isMyMessage
-                              ? 'my-message'
-                              : isBotMessage
-                              ? 'bot-message'
-                              : 'other-message'
-                          }`}
-                        >
-                          <div className="message-content-wrapper">
-                            {!isMyMessage && !isBotMessage && (
-                              <div className="sender-info">
-                                <img
-                                  src={
-                                    msg.senderProfileImageUrl ||
-                                    'https://via.placeholder.com/30'
-                                  }
-                                  alt={msg.senderUsername}
-                                  className="profile-picture"
-                                />
-                                <span className="sender-username">
-                                  {msg.senderUsername}
-                                </span>
-                              </div>
-                            )}
+            const isMyMessage = msg.senderId === userId;
+            const isBotMessage = msg.senderId === 7;
+            return (
+              <div
+                key={msg.id || `msg-${index}`}
+                className={`message-bubble ${
+                  isMyMessage
+                    ? 'my-message'
+                    : isBotMessage
+                      ? 'bot-message'
+                      : 'other-message'
+                }`}
+              >
+                <div className="message-content-wrapper">
+                  {!isMyMessage && !isBotMessage && (
+                    <div className="sender-info">
+                      <img
+                        src={
+                          msg.senderProfileImageUrl ||
+                          'https://via.placeholder.com/30'
+                        }
+                        alt={msg.senderUsername}
+                        className="profile-picture"
+                      />
+                      <span className="sender-username">
+                        {msg.senderUsername}
+                      </span>
+                    </div>
+                  )}
                   <div className="message-content">
                     <p className="message-text">{msg.text}</p>
                   </div>
                 </div>
                 {!isBotMessage && (
                   <span className="message-time">
-                    {new Date(msg.datetimeSendAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(msg.datetimeSendAt).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
                   </span>
                 )}
               </div>
             );
-          })}        </InfiniteScroll>
+          })}{' '}
+        </InfiniteScroll>
       </div>
       <div className="message-input-container">
         <input
@@ -191,4 +210,3 @@ const ChatRoom = () => {
 };
 
 export default ChatRoom;
-
