@@ -10,11 +10,10 @@ interface RoomCardProps {
 const RoomCard: React.FC<RoomCardProps> = ({ room, onClick }) => {
   // 날짜 포맷팅
   const formattedTime = new Date(room.departureTime).toLocaleString('ko-KR', {
-    month: 'numeric',
+    month: 'long',
     day: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-    hour12: false,
   });
 
   // 요금 포맷팅
@@ -25,7 +24,7 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick }) => {
   let statusClass = 'recruiting';
 
   if (room.status === 'SUCCESS') {
-    statusText = '모집완료';
+    statusText = '출발확정';
     statusClass = 'success';
   } else if (room.status === 'RECRUITING') {
     statusText = '모집중';
@@ -38,16 +37,21 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick }) => {
 
   return (
     <div className="room-card" onClick={() => onClick(room.roomId)}>
-      {/* 1. 경로 정보 */}
+      {/* 1. 경로 정보 (위아래 배치) */}
       <div className="room-route-row">
+        {/* 첫 번째 줄: 출발지 */}
         <div className="location departure">{room.departure}</div>
-        <div className="arrow">→</div>
-        <div className="location destination">{room.destination}</div>
+
+        {/* 두 번째 줄: 화살표 + 도착지 */}
+        <div className="route-destination-row">
+          <div className="arrow">→</div>
+          <div className="location destination">{room.destination}</div>
+        </div>
       </div>
 
       {/* 2. 상세 정보 */}
       <div className="room-details-row">
-        <span className="info-item time">🕒 {formattedTime}</span>
+        <span className="info-item time">{formattedTime}</span>
         <span className="info-divider">|</span>
         <span className="info-item fee">{feeDisplay}</span>
         <span className="info-divider">|</span>
@@ -61,7 +65,7 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick }) => {
         </div>
 
         <div className="status-container">
-          {/* 상태 배지 (모집중/모집완료) */}
+          {/* 상태 배지 (모집중/출발확정) */}
           <span className={`status-badge ${statusClass}`}>{statusText}</span>
           {/* 인원수 (항상 검정색) */}
           <span className="headcount-fixed">

@@ -1,56 +1,54 @@
 import { isAxiosError } from 'axios';
 import { useAtom } from 'jotai';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-// import { getLandmarks } from '../../api/map';
+import { getLandmarks } from '../../api/map';
 import { createRoom } from '../../api/room';
 import { isLoggedInAtom } from '../../common/user';
 import './CreateRoom.css';
 
-const initialLandmarks = [
-  { id: 1, name: '서울대입구역 3번 출구' },
-  { id: 2, name: '낙성대역 버스정류장' },
-  { id: 3, name: '낙성대입구 버스정류장' },
-  { id: 4, name: '대학동고시촌입구(녹두)' },
-  { id: 5, name: '사당역 4번 출구' },
-  { id: 6, name: '경영대.행정대학원' },
-  { id: 7, name: '자연대.행정관입구' },
-  { id: 8, name: '법대.사회대입구' },
-  { id: 9, name: '농생대' },
-  { id: 10, name: '공대입구(글로벌공학)' },
-  { id: 11, name: '제2공학관(302동)' },
-  { id: 12, name: '학부생활관' },
-  { id: 13, name: '수의대입구.보건대학원' },
-  { id: 14, name: '기숙사 삼거리' },
-  { id: 15, name: '국제대학원' },
-];
+// 랜드마크 타입 정의
+interface Landmark {
+  id: number;
+  name: string;
+}
 
 const CreateRoom = () => {
   const navigate = useNavigate();
-  const [landmarks, _setLandmarks] = useState(initialLandmarks);
-  const [start, setStart] = useState('1');
-  const [end, setEnd] = useState('2');
-  const [departureTime, setDepartureTime] = useState('');
-  const [minCapacity, setMinCapacity] = useState(2);
   const [isLoggedIn] = useAtom(isLoggedInAtom);
 
-  // useEffect(() => {
-  //   const fetchLandmarks = async () => {
-  //     try {
-  //       const data = await getLandmarks();
-  //       setLandmarks(data);
-  //     } catch (error) {
-  //       console.error('Error fetching landmarks:', error);
-  //     }
-  //   };
-  //   fetchLandmarks();
-  // }, []);
+  // 날짜 input 제어를 위한 ref 생성
+  const dateInputRef = useRef<HTMLInputElement>(null);
+
+  // 상태 관리
+  const [landmarks, setLandmarks] = useState<Landmark[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [start, setStart] = useState('');
+  const [end, setEnd] = useState('');
+  const [departureTime, setDepartureTime] = useState('');
+  const [minCapacity, setMinCapacity] = useState(2);
+
+  useEffect(() => {
+    const fetchLandmarksData = async () => {
+      try {
+        const data = await getLandmarks();
+        if (data && data.landmarks) {
+          setLandmarks(data.landmarks);
+        }
+      } catch (error) {
+        console.error('Error fetching landmarks:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchLandmarksData();
+  }, []);
 
   const handleMinCapacityChange = (amount: number) => {
     setMinCapacity((prev) => {
       const newValue = prev + amount;
       if (newValue >= 2 && newValue <= 4) {
-        // Max capacity is 4
         return newValue;
       }
       return prev;
@@ -58,7 +56,6 @@ const CreateRoom = () => {
   };
 
   const handleCreateRoom = async () => {
-    // Adjusted validation
     if (!start || !end || !departureTime || !minCapacity) {
       alert('모든 필드를 채워주세요.');
       return;
@@ -66,14 +63,20 @@ const CreateRoom = () => {
 
     if (!isLoggedIn) {
       alert('로그인이 필요합니다.');
-      window.location.href = '/';
+      navigate('/');
+      return;
+    }
+
+    if (start === end) {
+      alert('출발지와 도착지를 다르게 입력해주세요.');
       return;
     }
 
     const departureId = parseInt(start, 10);
     const destinationId = parseInt(end, 10);
 
-    const departureTimeISO = new Date(departureTime).toISOString();
+    // [수정] UTC 변환 없이 사용자가 선택한 한국 시간 그대로 전송 ('YYYY-MM-DDTHH:mm:00')
+    const departureTimeISO = `${departureTime}:00`;
 
     const roomDetails = {
       departureId,
@@ -85,29 +88,63 @@ const CreateRoom = () => {
     };
 
     try {
-      const _response = await createRoom(roomDetails);
-
-      alert('방이 성공적으로 개설되었습니다! ID: ' + _response.createdPotId);
+      const response = await createRoom(roomDetails);
+      alert('방이 성공적으로 개설되었습니다! ID: ' + response.createdPotId);
       navigate('/search-room');
     } catch (error: unknown) {
-      if (isAxiosError(error)) {
-        console.error('Error creating room:', error.response?.data);
-      } else {
-        console.error('An unexpected error occurred:', error);
+      let errorMsg = '방 개설 중 오류가 발생했습니다.';
+      if (isAxiosError(error) && error.response?.data) {
+        // biome-ignore lint/suspicious/noExplicitAny: 서버 에러 구조 대응
+        const data = error.response.data as any;
+        errorMsg = data.errMsg || data.message || errorMsg;
       }
-      alert('방 개설 중 오류가 발생했습니다.');
+      alert(errorMsg);
     }
   };
 
+  const formatDisplayDate = (dateString: string) => {
+    if (!dateString) return '날짜와 시간을 선택해주세요';
+    const date = new Date(dateString);
+    return date.toLocaleString('ko-KR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      weekday: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+  };
+
+  // 박스 클릭 시 실행될 함수
+  const handleDateBoxClick = () => {
+    if (dateInputRef.current) {
+      try {
+        // 브라우저의 날짜 선택 팝업을 강제로 띄움
+        dateInputRef.current.showPicker();
+      } catch (_error) {
+        // showPicker를 지원하지 않는 구형 브라우저 대비
+        dateInputRef.current.focus();
+      }
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="create-container loading-container">
+        <div className="loading-text">로딩 중...</div>
+      </div>
+    );
+  }
+
   return (
-    <div className="container">
-      <h1>방 개설하기</h1>
+    <div className="create-container">
+      <h1>택시팟 만들기</h1>
 
       <div className="card location-box">
         <div className="location-select">
           <select value={start} onChange={(e) => setStart(e.target.value)}>
             <option value="">출발지</option>
-
             {landmarks.map((landmark) => (
               <option key={`start-${landmark.id}`} value={landmark.id}>
                 {landmark.name}
@@ -130,13 +167,32 @@ const CreateRoom = () => {
 
       <div className="card">
         <div className="input-group">
-          <label>날짜 및 시간</label>
-          <input
-            type="datetime-local"
-            value={departureTime}
-            onChange={(e) => setDepartureTime(e.target.value)}
-            min={new Date().toISOString().slice(0, 16)}
-          />
+          <label>출발 날짜 및 시간</label>
+
+          {/* onClick 이벤트 연결 */}
+          <div
+            className="custom-date-input-wrapper"
+            onClick={handleDateBoxClick}
+          >
+            {/* ref 연결 */}
+            <input
+              ref={dateInputRef}
+              type="datetime-local"
+              className="hidden-date-input"
+              value={departureTime}
+              onChange={(e) => setDepartureTime(e.target.value)}
+              min={new Date().toISOString().slice(0, 16)}
+              step="60"
+            />
+            <div
+              className={`date-display-box ${departureTime ? 'active' : ''}`}
+            >
+              <span className="calendar-icon">📅</span>
+              <span className="date-text">
+                {formatDisplayDate(departureTime)}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -144,15 +200,25 @@ const CreateRoom = () => {
         <div className="input-group">
           <label>최소 인원</label>
           <div className="participant-control">
-            <button onClick={() => handleMinCapacityChange(-1)}>-</button>
+            <button
+              onClick={() => handleMinCapacityChange(-1)}
+              disabled={minCapacity <= 2}
+            >
+              -
+            </button>
             <span>{minCapacity}명</span>
-            <button onClick={() => handleMinCapacityChange(1)}>+</button>
+            <button
+              onClick={() => handleMinCapacityChange(1)}
+              disabled={minCapacity >= 4}
+            >
+              +
+            </button>
           </div>
         </div>
       </div>
 
       <button className="create-button" onClick={handleCreateRoom}>
-        방 개설하기
+        택시팟 만들기
       </button>
     </div>
   );

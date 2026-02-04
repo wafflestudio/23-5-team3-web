@@ -1,6 +1,7 @@
 import apiClient from './index';
 
-export interface User {
+// export 키워드 제거 (이 파일 내부에서만 참조 가능)
+interface User {
   // id: number;
   email: string;
   username: string;
