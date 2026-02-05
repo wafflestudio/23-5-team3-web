@@ -11,13 +11,12 @@ const MyChat = () => {
   const [landmarks, setLandmarks] = useState<Record<number, string>>({});
   const [loading, setLoading] = useState(true);
 
-  // 랜드마크 정보 가져오기
   const fetchLandmarksData = useCallback(async () => {
     try {
       const data = await getLandmarks();
       if (data && data.landmarks) {
         const landmarksMap: Record<number, string> = {};
-        // biome-ignore lint/suspicious/noExplicitAny: API 응답 타입
+        // biome-ignore lint/suspicious/noExplicitAny:
         data.landmarks.forEach((l: any) => {
           landmarksMap[l.id] = l.name;
         });
@@ -28,7 +27,6 @@ const MyChat = () => {
     }
   }, []);
 
-  // 현재 내 팟 정보 가져오기
   const fetchCurrentPot = useCallback(async () => {
     try {
       const pot = await getCurrentPot();
@@ -79,7 +77,6 @@ const MyChat = () => {
     );
   }
 
-  // 상태 텍스트 및 클래스 계산
   let statusText = '모집중';
   let statusClass = 'recruiting';
 
@@ -104,9 +101,16 @@ const MyChat = () => {
         <>
           <h1 className="page-title">참여 중인 팟</h1>
           <div className="current-pot-card">
-            <Link to={`/chat/${currentPot.id}`} className="pot-link">
+            {/* [수정] unreadCount와 함께 currentCount(참여인원)도 전달 */}
+            <Link
+              to={`/chat/${currentPot.id}`}
+              className="pot-link"
+              state={{
+                unreadCount: currentPot.unreadCount,
+                totalMembers: currentPot.currentCount,
+              }}
+            >
               <div className="pot-details">
-                {/* [수정] 경로 정보 위아래 2줄 배치 */}
                 <div className="pot-info">
                   <div className="location">
                     {landmarks[currentPot.departureId] || '알 수 없음'}

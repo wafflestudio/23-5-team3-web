@@ -6,29 +6,62 @@ import {
   useRef,
   useState,
 } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import type { Message } from '../../api/room';
-import { getMessages } from '../../api/room';
+import { getMessages, markAsRead } from '../../api/room';
 import { createStompClient } from '../../api/websocket';
 import { isLoggedInAtom, userIdAtom } from '../../common/user';
-import InfiniteScroll from '../../components/InfiniteScroll';
 import './ChatRoom.css';
 import type { Client } from '@stomp/stompjs';
 
 const ChatRoom = () => {
   const { roomId } = useParams<{ roomId: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
+
+  // 상태 관리
   const [messages, setMessages] = useState<Message[]>([]);
-  const [_readStatuses, setReadStatuses] = useState<Record<number, number>>({});
+  const [readStatuses, setReadStatuses] = useState<Record<number, number>>({});
+
   const [loading, setLoading] = useState(false);
+  const [isReady, setIsReady] = useState(false);
+  const [fetchingMore, setFetchingMore] = useState(false);
+
   const [hasNext, setHasNext] = useState(true);
   const [cursor, setCursor] = useState<number | null>(null);
+
+  const [lastReadMessageIdOnEntry, setLastReadMessageIdOnEntry] = useState<
+    number | null
+  >(null);
+  const [showNewMessageAlert, setShowNewMessageAlert] = useState(false);
+
   const [isLoggedIn] = useAtom(isLoggedInAtom);
   const [userId] = useAtom(userIdAtom);
+
   const [newMessage, setNewMessage] = useState('');
   const clientRef = useRef<Client | null>(null);
+
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
-  const isInitialLoad = useRef(true);
+  const prevScrollHeightRef = useRef<number>(0);
+
+  const needsInitialScroll = useRef(true);
+  const msgHistoryTick = useRef(false);
+
+  const isAtBottomRef = useRef(true);
+
+  const lastMessageIdRef = useRef<number | null>(null);
+
+  const initialUnreadCount =
+    (location.state as { unreadCount?: number })?.unreadCount || 0;
+  const totalMembers =
+    (location.state as { totalMembers?: number })?.totalMembers || 2;
+
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, []);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -37,44 +70,86 @@ const ChatRoom = () => {
     }
   }, [isLoggedIn, navigate]);
 
-  const fetchMessages = useCallback(async () => {
-    if (!roomId || !hasNext || loading) return;
+  const getUnreadCountForMessage = (msg: Message) => {
+    const explicitReadersCount = Object.values(readStatuses).filter(
+      (lastReadId) => lastReadId >= msg.id
+    ).length;
 
-    setLoading(true);
-    try {
-      const {
-        items,
-        nextCursor,
-        hasNext: newHasNext,
-        readStatuses: newReadStatuses,
-      } = await getMessages(parseInt(roomId, 10), cursor);
+    const senderLastRead = readStatuses[msg.senderId];
+    const isSenderAlreadyCounted =
+      senderLastRead !== undefined && senderLastRead >= msg.id;
 
-      setMessages((prev) => [...prev, ...items]);
-      setCursor(nextCursor);
-      setHasNext(newHasNext);
-      setReadStatuses(newReadStatuses);
-    } catch (error) {
-      console.error('Error fetching messages:', error);
-    } finally {
-      setLoading(false);
+    let finalReadCount = explicitReadersCount;
+    if (!isSenderAlreadyCounted) {
+      finalReadCount += 1;
     }
-  }, [roomId, hasNext, cursor, loading]);
 
+    return Math.max(0, totalMembers - finalReadCount);
+  };
+
+  // 1. 초기 데이터 로드 (반복 호출)
   useEffect(() => {
-    if (isLoggedIn && roomId) {
+    if (isLoggedIn && roomId && userId) {
       const fetchInitial = async () => {
         setLoading(true);
         try {
-          const {
-            items,
-            nextCursor,
-            hasNext: newHasNext,
-            readStatuses: newReadStatuses,
-          } = await getMessages(parseInt(roomId, 10), null);
-          setMessages(items);
-          setCursor(nextCursor);
-          setHasNext(newHasNext);
-          setReadStatuses(newReadStatuses);
+          const targetCount =
+            initialUnreadCount > 0 ? initialUnreadCount + 5 : 20;
+
+          let collectedMessages: Message[] = [];
+          let currentCursor: number | null = null;
+          let keepFetching = true;
+
+          let finalNextCursor: number | null = null;
+          let finalHasNext = false;
+          let finalReadStatuses: Record<number, number> = {};
+
+          while (keepFetching && collectedMessages.length < targetCount) {
+            const res = await getMessages(
+              parseInt(roomId, 10),
+              currentCursor,
+              20
+            );
+
+            collectedMessages = [...collectedMessages, ...res.items];
+            finalReadStatuses = { ...finalReadStatuses, ...res.readStatuses };
+
+            currentCursor = res.nextCursor;
+            finalNextCursor = res.nextCursor;
+            finalHasNext = res.hasNext;
+
+            if (!res.hasNext) {
+              keepFetching = false;
+            }
+          }
+
+          const sortedItems = [...collectedMessages].reverse();
+
+          setMessages(sortedItems);
+          setCursor(finalNextCursor);
+          setHasNext(finalHasNext);
+          setReadStatuses(finalReadStatuses);
+
+          if (sortedItems.length > 0) {
+            lastMessageIdRef.current = sortedItems[sortedItems.length - 1].id;
+          }
+
+          const myLastReadId = finalReadStatuses[userId] || 0;
+          const lastMessageId =
+            sortedItems.length > 0 ? sortedItems[sortedItems.length - 1].id : 0;
+
+          if (myLastReadId >= lastMessageId) {
+            setLastReadMessageIdOnEntry(null);
+          } else {
+            setLastReadMessageIdOnEntry(myLastReadId);
+          }
+
+          if (sortedItems.length > 0) {
+            markAsRead(
+              parseInt(roomId, 10),
+              sortedItems[sortedItems.length - 1].id
+            );
+          }
         } catch (error) {
           console.error('Error fetching messages:', error);
         } finally {
@@ -83,30 +158,159 @@ const ChatRoom = () => {
       };
       fetchInitial();
     }
-  }, [isLoggedIn, roomId]);
+  }, [isLoggedIn, roomId, userId, initialUnreadCount]);
 
+  // 2. 초기 스크롤 위치
   useLayoutEffect(() => {
+    // [수정 2] messages.length > 0 조건을 명시하여 messages 의존성 사용 처리
     if (
-      isInitialLoad.current &&
-      scrollContainerRef.current &&
-      messages.length > 0
+      messages.length > 0 &&
+      !loading &&
+      needsInitialScroll.current &&
+      scrollContainerRef.current
     ) {
       const container = scrollContainerRef.current;
-      container.scrollTop = container.scrollHeight;
-      isInitialLoad.current = false;
+      const markerElement = container.querySelector('.unread-marker');
+
+      if (markerElement) {
+        markerElement.scrollIntoView({ block: 'center' });
+        isAtBottomRef.current = false;
+      } else {
+        container.scrollTop = container.scrollHeight;
+        isAtBottomRef.current = true;
+      }
+
+      needsInitialScroll.current = false;
+      setIsReady(true);
+    } else if (!loading && messages.length === 0) {
+      setIsReady(true);
+    }
+  }, [loading, messages]);
+
+  // 3. 무한 스크롤
+  const fetchMoreMessages = useCallback(async () => {
+    if (!roomId || !hasNext || fetchingMore || loading) return;
+
+    if (scrollContainerRef.current) {
+      prevScrollHeightRef.current = scrollContainerRef.current.scrollHeight;
+      scrollContainerRef.current.style.overflowY = 'hidden';
+    }
+
+    setFetchingMore(true);
+
+    try {
+      const {
+        items,
+        nextCursor,
+        hasNext: newHasNext,
+        readStatuses: newReadStatuses,
+      } = await getMessages(parseInt(roomId, 10), cursor, 20);
+
+      const sortedOlderItems = [...items].reverse();
+      msgHistoryTick.current = true;
+
+      setMessages((prev) => [...sortedOlderItems, ...prev]);
+      setCursor(nextCursor);
+      setHasNext(newHasNext);
+      setReadStatuses((prev) => ({ ...prev, ...newReadStatuses }));
+    } catch (error) {
+      console.error('Error fetching more messages:', error);
+      if (scrollContainerRef.current) {
+        scrollContainerRef.current.style.overflowY = 'auto';
+      }
+      setFetchingMore(false);
+    }
+  }, [roomId, hasNext, cursor, fetchingMore, loading]);
+
+  useLayoutEffect(() => {
+    // [수정 2] messages.length 조건을 사용하여 의존성 경고 해결
+    if (
+      messages.length > 0 &&
+      scrollContainerRef.current &&
+      msgHistoryTick.current
+    ) {
+      const container = scrollContainerRef.current;
+      const newScrollHeight = container.scrollHeight;
+      const diff = newScrollHeight - prevScrollHeightRef.current;
+
+      if (diff > 0) {
+        container.scrollTop = diff;
+      }
+
+      container.style.overflowY = 'auto';
+      setFetchingMore(false);
+      msgHistoryTick.current = false;
     }
   }, [messages]);
 
+  // 메시지 수신 시 처리
+  useEffect(() => {
+    if (
+      isReady &&
+      !fetchingMore &&
+      messages.length > 0 &&
+      scrollContainerRef.current
+    ) {
+      const lastMsg = messages[messages.length - 1];
+
+      if (lastMsg.id !== lastMessageIdRef.current) {
+        const isMyMessage = lastMsg.senderId === userId;
+        const wasAtBottom = isAtBottomRef.current;
+
+        if (isMyMessage || wasAtBottom) {
+          scrollContainerRef.current.scrollTop =
+            scrollContainerRef.current.scrollHeight;
+          setShowNewMessageAlert(false);
+          isAtBottomRef.current = true;
+        } else {
+          setShowNewMessageAlert(true);
+        }
+
+        lastMessageIdRef.current = lastMsg.id;
+      }
+    }
+  }, [messages, isReady, fetchingMore, userId]);
+
+  const handleScroll = () => {
+    if (scrollContainerRef.current) {
+      const { scrollTop, scrollHeight, clientHeight } =
+        scrollContainerRef.current;
+
+      if (scrollTop === 0 && hasNext && !fetchingMore && isReady) {
+        fetchMoreMessages();
+      }
+
+      const isBottom = scrollHeight - scrollTop - clientHeight < 150;
+      isAtBottomRef.current = isBottom;
+
+      if (isBottom) {
+        setShowNewMessageAlert(false);
+      }
+    }
+  };
+
+  const scrollToBottom = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTop =
+        scrollContainerRef.current.scrollHeight;
+      setShowNewMessageAlert(false);
+      isAtBottomRef.current = true;
+    }
+  };
+
+  // WebSocket
+  // [수정 3] userId 의존성 제거 (내부에서 안 씀)
   useEffect(() => {
     if (!roomId || !isLoggedIn) return;
-
     const client = createStompClient();
     clientRef.current = client;
 
     client.onConnect = () => {
       client.subscribe(`/sub/rooms/${roomId}`, (message) => {
         const receivedMessage = JSON.parse(message.body);
-        setMessages((prevMessages) => [receivedMessage, ...prevMessages]);
+        setMessages((prevMessages) => [...prevMessages, receivedMessage]);
+
+        markAsRead(parseInt(roomId, 10), receivedMessage.id);
       });
 
       client.subscribe(`/sub/rooms/${roomId}/read`, (message) => {
@@ -121,17 +325,15 @@ const ChatRoom = () => {
     };
 
     client.activate();
-
     return () => {
       client.deactivate();
     };
-  }, [roomId, isLoggedIn]);
+  }, [roomId, isLoggedIn]); // userId 제거됨
 
+  // [수정 1] async 제거
   const sendMessage = () => {
     if (clientRef.current && newMessage.trim() !== '' && roomId) {
-      const messageToSend = {
-        text: newMessage,
-      };
+      const messageToSend = { text: newMessage };
       clientRef.current.publish({
         destination: `/pub/rooms/${roomId}/messages`,
         body: JSON.stringify(messageToSend),
@@ -140,20 +342,69 @@ const ChatRoom = () => {
     }
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
+  };
+
+  if (!isReady) {
+    return (
+      <div className="chat-room-container loading-screen">
+        <div className="spinner"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="chat-room-container">
-      <div className="messages-container" ref={scrollContainerRef}>
-        <InfiniteScroll
-          className="message-list-wrapper"
-          onEnd={fetchMessages}
-          disabled={!hasNext || loading}
-        >
-          {messages.map((msg, index) => {
-            const isMyMessage = msg.senderId === userId;
-            const isBotMessage = msg.senderId === 7;
-            return (
+      <div
+        className="messages-container"
+        ref={scrollContainerRef}
+        onScroll={handleScroll}
+      >
+        {fetchingMore && (
+          <div className="loading-indicator">
+            <div className="spinner"></div>
+          </div>
+        )}
+
+        {messages.map((msg, index) => {
+          const isMyMessage = msg.senderId === userId;
+          const isBotMessage = msg.senderId === 7;
+
+          const currentDate = formatDate(msg.datetimeSendAt);
+          const prevDate =
+            index > 0 ? formatDate(messages[index - 1].datetimeSendAt) : null;
+          const showDateSeparator = currentDate !== prevDate;
+
+          let showUnreadMarker = false;
+          if (lastReadMessageIdOnEntry !== null) {
+            const prevMsgId = index > 0 ? messages[index - 1].id : 0;
+            if (prevMsgId === lastReadMessageIdOnEntry) {
+              showUnreadMarker = true;
+            }
+            if (index === 0 && msg.id > lastReadMessageIdOnEntry) {
+              showUnreadMarker = true;
+            }
+          }
+
+          const unreadCount = getUnreadCountForMessage(msg);
+
+          return (
+            <div key={msg.id || `msg-${index}`}>
+              {showDateSeparator && (
+                <div className="date-separator">
+                  <span>{currentDate}</span>
+                </div>
+              )}
+
+              {showUnreadMarker && (
+                <div className="unread-marker">
+                  <span>여기까지 읽으셨습니다</span>
+                </div>
+              )}
+
               <div
-                key={msg.id || `msg-${index}`}
                 className={`message-bubble ${
                   isMyMessage
                     ? 'my-message'
@@ -162,48 +413,94 @@ const ChatRoom = () => {
                       : 'other-message'
                 }`}
               >
+                {!isMyMessage && !isBotMessage && (
+                  <div className="profile-column">
+                    <img
+                      src={
+                        msg.senderProfileImageUrl ||
+                        'https://via.placeholder.com/40'
+                      }
+                      alt={msg.senderUsername}
+                      className="profile-picture"
+                    />
+                  </div>
+                )}
+
                 <div className="message-content-wrapper">
                   {!isMyMessage && !isBotMessage && (
-                    <div className="sender-info">
-                      <img
-                        src={
-                          msg.senderProfileImageUrl ||
-                          'https://via.placeholder.com/30'
-                        }
-                        alt={msg.senderUsername}
-                        className="profile-picture"
-                      />
-                      <span className="sender-username">
-                        {msg.senderUsername}
-                      </span>
-                    </div>
+                    <span className="sender-username">
+                      {msg.senderUsername}
+                    </span>
                   )}
-                  <div className="message-content">
-                    <p className="message-text">{msg.text}</p>
+
+                  <div className="message-row">
+                    {isMyMessage && (
+                      <div className="message-meta">
+                        {unreadCount > 0 && (
+                          <span className="unread-count">{unreadCount}</span>
+                        )}
+                        <span className="message-time">
+                          {new Date(msg.datetimeSendAt).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="message-content">
+                      <p className="message-text">{msg.text}</p>
+                    </div>
+
+                    {!isMyMessage && !isBotMessage && (
+                      <div className="message-meta">
+                        {unreadCount > 0 && (
+                          <span className="unread-count">{unreadCount}</span>
+                        )}
+                        <span className="message-time">
+                          {new Date(msg.datetimeSendAt).toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
-                {!isBotMessage && (
-                  <span className="message-time">
-                    {new Date(msg.datetimeSendAt).toLocaleTimeString([], {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </span>
-                )}
               </div>
-            );
-          })}{' '}
-        </InfiniteScroll>
+            </div>
+          );
+        })}
       </div>
+
+      {showNewMessageAlert && (
+        <div className="new-message-alert" onClick={scrollToBottom}>
+          ⬇ 새로운 메시지
+        </div>
+      )}
+
       <div className="message-input-container">
         <input
           type="text"
-          placeholder="Type a message..."
+          placeholder="메시지 보내기"
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
         />
-        <button onClick={sendMessage}>Send</button>
+        <button onClick={sendMessage} className="send-button">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M2.01 21L23 12L2.01 3L2 10L17 12L2 14L2.01 21Z"
+              fill="white"
+            />
+          </svg>
+        </button>
       </div>
     </div>
   );
