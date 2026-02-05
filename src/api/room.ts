@@ -55,19 +55,13 @@ export const createRoom = async (
   return response.data;
 };
 
-// [수정] 응답이 비어있으면 null을 반환하도록 처리
 export const getCurrentPot = async (): Promise<Pot | null> => {
   const response = await apiClient.get<Pot>('/users/me/pot');
-  // axios는 body가 비어있으면 빈 문자열("")을 줄 수 있음
   if (!response.data) {
     return null;
   }
   return response.data;
 };
-
-// export const deleteRoom = async (roomId: number): Promise<void> => {
-//   await apiClient.delete(`/rooms/${roomId}`);
-// };
 
 // 방 나가기 API
 export const leaveRoom = async (roomId: number): Promise<void> => {
@@ -87,25 +81,11 @@ export const getMessages = async (
   );
   return response.data;
 };
-/*
+
+// [수정] 주석 해제 및 구현
 export const markAsRead = async (
   roomId: number,
   messageId: number
 ): Promise<void> => {
   await apiClient.patch(`/rooms/${roomId}/read`, { messageId });
 };
-*/
-
-// export const getMessages = async (
-//   roomId: number,
-//   cursor: number,
-//   size = 20
-// ): Promise<GetMessagesResponse> => {
-//   const response = await apiClient.get<GetMessagesResponse>(
-//     `/rooms/${roomId}/messages`,
-//     {
-//       params: { cursor, size },
-//     }
-//   );
-//   return response.data;
-// };
