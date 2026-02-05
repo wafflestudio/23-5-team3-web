@@ -34,6 +34,8 @@ export interface Message {
   senderId: number;
   text: string;
   datetimeSendAt: string;
+  senderUsername: string;
+  senderProfileImageUrl: string | null;
 }
 
 interface GetMessagesResponse {

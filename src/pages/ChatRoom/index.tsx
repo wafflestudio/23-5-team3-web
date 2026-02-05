@@ -1,10 +1,17 @@
 import { useAtom } from 'jotai';
-import { useEffect, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { Message } from '../../api/room';
 import { getMessages } from '../../api/room';
 import { createStompClient } from '../../api/websocket';
 import { isLoggedInAtom, userIdAtom } from '../../common/user';
+import InfiniteScroll from '../../components/InfiniteScroll';
 import './ChatRoom.css';
 import type { Client } from '@stomp/stompjs';
 
@@ -13,11 +20,15 @@ const ChatRoom = () => {
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [_readStatuses, setReadStatuses] = useState<Record<number, number>>({});
-  const [_loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [hasNext, setHasNext] = useState(true);
+  const [cursor, setCursor] = useState<number | null>(null);
   const [isLoggedIn] = useAtom(isLoggedInAtom);
   const [userId] = useAtom(userIdAtom);
   const [newMessage, setNewMessage] = useState('');
   const clientRef = useRef<Client | null>(null);
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null);
+  const isInitialLoad = useRef(true);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -26,17 +37,43 @@ const ChatRoom = () => {
     }
   }, [isLoggedIn, navigate]);
 
-  // This useEffect will run once on mount to fetch initial messages.
+  const fetchMessages = useCallback(async () => {
+    if (!roomId || !hasNext || loading) return;
+
+    setLoading(true);
+    try {
+      const {
+        items,
+        nextCursor,
+        hasNext: newHasNext,
+        readStatuses: newReadStatuses,
+      } = await getMessages(parseInt(roomId, 10), cursor);
+
+      setMessages((prev) => [...prev, ...items]);
+      setCursor(nextCursor);
+      setHasNext(newHasNext);
+      setReadStatuses(newReadStatuses);
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [roomId, hasNext, cursor, loading]);
+
   useEffect(() => {
     if (isLoggedIn && roomId) {
-      const fetchInitialMessages = async () => {
+      const fetchInitial = async () => {
         setLoading(true);
         try {
-          const { items, readStatuses: newReadStatuses } = await getMessages(
-            parseInt(roomId, 10),
-            null
-          );
-          setMessages(items); // API returns newest first
+          const {
+            items,
+            nextCursor,
+            hasNext: newHasNext,
+            readStatuses: newReadStatuses,
+          } = await getMessages(parseInt(roomId, 10), null);
+          setMessages(items);
+          setCursor(nextCursor);
+          setHasNext(newHasNext);
           setReadStatuses(newReadStatuses);
         } catch (error) {
           console.error('Error fetching messages:', error);
@@ -44,9 +81,21 @@ const ChatRoom = () => {
           setLoading(false);
         }
       };
-      fetchInitialMessages();
+      fetchInitial();
     }
   }, [isLoggedIn, roomId]);
+
+  useLayoutEffect(() => {
+    if (
+      isInitialLoad.current &&
+      scrollContainerRef.current &&
+      messages.length > 0
+    ) {
+      const container = scrollContainerRef.current;
+      container.scrollTop = container.scrollHeight;
+      isInitialLoad.current = false;
+    }
+  }, [messages]);
 
   useEffect(() => {
     if (!roomId || !isLoggedIn) return;
@@ -55,13 +104,11 @@ const ChatRoom = () => {
     clientRef.current = client;
 
     client.onConnect = () => {
-      // Subscription for new messages
       client.subscribe(`/sub/rooms/${roomId}`, (message) => {
         const receivedMessage = JSON.parse(message.body);
         setMessages((prevMessages) => [receivedMessage, ...prevMessages]);
       });
 
-      // Subscription for read status updates
       client.subscribe(`/sub/rooms/${roomId}/read`, (message) => {
         const { userId: readUserId, lastReadMessageId } = JSON.parse(
           message.body
@@ -95,25 +142,58 @@ const ChatRoom = () => {
 
   return (
     <div className="chat-room-container">
-      <div className="messages-container">
-        {messages.map((msg, index) => {
-          const isMyMessage = msg.senderId === userId;
-          return (
-            <div
-              key={msg.id || `msg-${index}`}
-              className={`message-bubble ${
-                isMyMessage ? 'my-message' : 'other-message'
-              }`}
-            >
-              <div className="message-content">
-                <p className="message-text">{msg.text}</p>
-                <span className="message-time">
-                  {new Date(msg.datetimeSendAt).toLocaleTimeString()}
-                </span>
+      <div className="messages-container" ref={scrollContainerRef}>
+        <InfiniteScroll
+          className="message-list-wrapper"
+          onEnd={fetchMessages}
+          disabled={!hasNext || loading}
+        >
+          {messages.map((msg, index) => {
+            const isMyMessage = msg.senderId === userId;
+            const isBotMessage = msg.senderId === 7;
+            return (
+              <div
+                key={msg.id || `msg-${index}`}
+                className={`message-bubble ${
+                  isMyMessage
+                    ? 'my-message'
+                    : isBotMessage
+                      ? 'bot-message'
+                      : 'other-message'
+                }`}
+              >
+                <div className="message-content-wrapper">
+                  {!isMyMessage && !isBotMessage && (
+                    <div className="sender-info">
+                      <img
+                        src={
+                          msg.senderProfileImageUrl ||
+                          'https://via.placeholder.com/30'
+                        }
+                        alt={msg.senderUsername}
+                        className="profile-picture"
+                      />
+                      <span className="sender-username">
+                        {msg.senderUsername}
+                      </span>
+                    </div>
+                  )}
+                  <div className="message-content">
+                    <p className="message-text">{msg.text}</p>
+                  </div>
+                </div>
+                {!isBotMessage && (
+                  <span className="message-time">
+                    {new Date(msg.datetimeSendAt).toLocaleTimeString([], {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                )}
               </div>
-            </div>
-          );
-        })}
+            );
+          })}{' '}
+        </InfiniteScroll>
       </div>
       <div className="message-input-container">
         <input
