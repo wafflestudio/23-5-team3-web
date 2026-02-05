@@ -47,6 +47,9 @@ const ChatRoom = () => {
   const needsInitialScroll = useRef(true);
   const msgHistoryTick = useRef(false);
 
+  // [수정: 마커 유지용] 초기 로딩이 완료되었는지 체크하는 Ref 추가
+  const isInitialLoadComplete = useRef(false);
+
   const isAtBottomRef = useRef(true);
 
   const lastMessageIdRef = useRef<number | null>(null);
@@ -94,7 +97,7 @@ const ChatRoom = () => {
         setLoading(true);
         try {
           const targetCount =
-            initialUnreadCount > 0 ? initialUnreadCount + 5 : 20;
+            initialUnreadCount > 0 ? initialUnreadCount + 5 : 40;
 
           let collectedMessages: Message[] = [];
           let currentCursor: number | null = null;
@@ -105,10 +108,18 @@ const ChatRoom = () => {
           let finalReadStatuses: Record<number, number> = {};
 
           while (keepFetching && collectedMessages.length < targetCount) {
+            // ================================================================
+            // [수정: fetch 크기 동적 계산]
+            // 목표치까지 남은 개수만큼만 가져오도록 계산 (최대 100개 제한)
+            // 안 읽은게 없으면 40개만 가져옴.
+            const remaining = targetCount - collectedMessages.length;
+            const fetchSize = Math.min(100, remaining);
+            // ================================================================
+
             const res = await getMessages(
               parseInt(roomId, 10),
               currentCursor,
-              20
+              fetchSize // [수정] 계산된 fetchSize 적용
             );
 
             collectedMessages = [...collectedMessages, ...res.items];
@@ -134,15 +145,26 @@ const ChatRoom = () => {
             lastMessageIdRef.current = sortedItems[sortedItems.length - 1].id;
           }
 
-          const myLastReadId = finalReadStatuses[userId] || 0;
-          const lastMessageId =
-            sortedItems.length > 0 ? sortedItems[sortedItems.length - 1].id : 0;
+          // ================================================================
+          // [수정: 마커 유지 로직]
+          // 초기 로딩이 아직 완료되지 않았을 때(최초 1회)만 마커 위치를 계산하고 저장함.
+          // 이후 리렌더링이나 추가 로딩 시에는 이 값을 덮어쓰지 않음.
+          if (!isInitialLoadComplete.current) {
+            const myLastReadId = finalReadStatuses[userId] || 0;
+            const lastMessageId =
+              sortedItems.length > 0
+                ? sortedItems[sortedItems.length - 1].id
+                : 0;
 
-          if (myLastReadId >= lastMessageId) {
-            setLastReadMessageIdOnEntry(null);
-          } else {
-            setLastReadMessageIdOnEntry(myLastReadId);
+            if (myLastReadId >= lastMessageId) {
+              setLastReadMessageIdOnEntry(null);
+            } else {
+              setLastReadMessageIdOnEntry(myLastReadId);
+            }
+            // 마커 계산 완료 표시 (이제 다시는 이 블록에 들어오지 않음)
+            isInitialLoadComplete.current = true;
           }
+          // ================================================================
 
           if (sortedItems.length > 0) {
             markAsRead(
@@ -204,7 +226,7 @@ const ChatRoom = () => {
         nextCursor,
         hasNext: newHasNext,
         readStatuses: newReadStatuses,
-      } = await getMessages(parseInt(roomId, 10), cursor, 20);
+      } = await getMessages(parseInt(roomId, 10), cursor, 40);
 
       const sortedOlderItems = [...items].reverse();
       msgHistoryTick.current = true;
