@@ -1,5 +1,11 @@
 import { useAtom } from 'jotai';
-import { FaComment, FaPlus, FaSearch, FaUser } from 'react-icons/fa';
+import {
+  FaComment,
+  FaPlus,
+  FaSearch,
+  FaShieldAlt,
+  FaUser,
+} from 'react-icons/fa';
 import { Link, useLocation } from 'react-router-dom';
 import { BACKEND_URL } from '../../api/constants';
 import {
@@ -7,12 +13,14 @@ import {
   isLoggedInAtom,
   nicknameAtom,
   profileImageAtom,
+  userRoleAtom,
 } from '../../common/user';
 import './navBar.css';
 
 const NavBar = () => {
   const location = useLocation();
-  const [isLoggedIn, _setIsLoggedIn] = useAtom(isLoggedInAtom);
+  const [isLoggedIn] = useAtom(isLoggedInAtom);
+  const [userRole] = useAtom(userRoleAtom);
   const [, _setEmail] = useAtom(emailAtom);
   const [, _setNickname] = useAtom(nicknameAtom);
   const [, _setProfileImage] = useAtom(profileImageAtom);
@@ -23,6 +31,10 @@ const NavBar = () => {
     { path: '/my-chat', icon: <FaComment />, label: 'myChat' },
     { path: '/my-page', icon: <FaUser />, label: 'myPage' },
   ];
+
+  if (userRole === 'ADMIN') {
+    navLinks.push({ path: '/admin', icon: <FaShieldAlt />, label: 'admin' });
+  }
 
   const isLinkActive = (path: string) => {
     if (path === '/search-room' && location.pathname === '/') {
