@@ -79,15 +79,13 @@ export const markReportAsProcessed = async (
 };
 
 // ================= /admin/users/{userId}/suspend =================
-interface SuspendUserResponse {
-  days: number;
-}
-
 export const suspendUser = async (
-  userId: number
-): Promise<SuspendUserResponse> => {
-  const response = await apiClient.post<SuspendUserResponse>(
-    `/admin/users/${userId}/suspend`
+  userId: number,
+  days: number
+): Promise<string> => {
+  const response = await apiClient.post<string>(
+    `/admin/users/${userId}/suspend`,
+    { days }
   );
   return response.data;
 };
