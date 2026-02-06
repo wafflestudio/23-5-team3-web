@@ -2,7 +2,8 @@ import { isAxiosError } from 'axios';
 import { useAtom } from 'jotai';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import type { ReportDetail } from '../../api/admin';
+// 타입 충돌 방지를 위해 이름 변경
+import type { ReportDetail as ReportDetailType } from '../../api/admin';
 import {
   getReportById,
   markReportAsProcessed,
@@ -15,13 +16,14 @@ const ReportDetail = () => {
   const { reportId } = useParams<{ reportId: string }>();
   const navigate = useNavigate();
   const [userRole] = useAtom(userRoleAtom);
-  const [report, setReport] = useState<ReportDetail | null>(null);
-  const [_loading, setLoading] = useState(true); // Start with loading true
+
+  // report는 초기에 null 상태입니다.
+  const [report, setReport] = useState<ReportDetailType | null>(null);
+  const [_loading, setLoading] = useState(true);
   const [_error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
-    // Wait until userRole is resolved before checking
     if (userRole && userRole !== 'ADMIN') {
       alert('You do not have permission to access this page.');
       navigate('/');
@@ -95,6 +97,16 @@ const ReportDetail = () => {
       <div className="report-detail-container">Loading or Access Denied...</div>
     );
   }
+
+  // ▼▼▼ [핵심 수정] 이 부분이 없으면 아래쪽 return에서 에러가 납니다! ▼▼▼
+  // report가 null이면 로딩 화면을 보여주고 함수를 종료합니다.
+  // 이 코드를 지나가면 TypeScript는 report가 null이 아님을 확신하게 됩니다.
+  if (!report) {
+    return (
+      <div className="report-detail-container">Loading report data...</div>
+    );
+  }
+  // ▲▲▲ 수정 끝 ▲▲▲
 
   return (
     <div className="report-detail-container">
