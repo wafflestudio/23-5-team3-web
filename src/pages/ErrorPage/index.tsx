@@ -28,14 +28,14 @@ const ErrorPage = () => {
   return (
     <div className="error-page-container">
       <div className="error-content">
-        <h1>오류 발생!</h1>
+        <h1>ERROR!</h1>
         {/* Dynamic error message if provided */}
         {errorMessage !== '알 수 없는 오류가 발생했습니다.' && (
           <p className="error-message">{errorMessage}</p>
         )}
         {/* Static messages as requested */}
-        <p>구글 로그인은 @snu.ac.kr 도메인만 지원됩니다</p>
-        <p>정지 유저는 정지가 풀릴 때까지 서비스 이용이 불가합니다</p>
+        <p>로그인은 @snu.ac.kr 도메인만 지원됩니다</p>
+        <p>정지된 유저는 정지가 풀릴 때까지 서비스 이용이 불가합니다</p>
         <button onClick={handleGoHome} className="home-button">
           홈으로
         </button>
