@@ -194,7 +194,7 @@ const ChatRoom = () => {
       await updateRoomStatus(parseInt(roomId, 10), newStatus);
       setIsLocked(newStatus);
       alert(
-        `모집 상태가 ${newStatus ? '모집중단' : '모집중'}으로 변경되었습니다.`
+        `모집 상태가 ${newStatus ? '모집중지' : '모집중'}으로 변경되었습니다.`
       );
       setShowStatusModal(false);
     } catch (error) {
@@ -717,10 +717,10 @@ const ChatRoom = () => {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h3>모집 상태 변경</h3>
             <p>
-              현재 상태: <strong>{isLocked ? '모집중단' : '모집중'}</strong>
+              현재 상태: <strong>{isLocked ? '모집중지' : '모집중'}</strong>
             </p>
             <p>
-              상태를 <strong>{isLocked ? '모집중' : '모집중단'}</strong>으로
+              상태를 <strong>{isLocked ? '모집중' : '모집중지'}</strong>으로
               변경하시겠습니까?
             </p>
             <div className="modal-actions">
