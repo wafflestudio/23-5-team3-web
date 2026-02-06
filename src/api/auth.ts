@@ -1,6 +1,6 @@
 import apiClient from './index';
 
-export interface User {
+interface User {
   // id: number;
   email: string;
   username: string;
