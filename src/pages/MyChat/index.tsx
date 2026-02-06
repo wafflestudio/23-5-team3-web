@@ -123,7 +123,7 @@ const MyChat = () => {
         <div className="no-pot-message">현재 참여 중인 팟이 없습니다.</div>
       ) : (
         <>
-          <h1 className="page-title">참여 중인 팟</h1>
+          <h1 className="page-title">나의 택시팟</h1>
           <div className="current-pot-card">
             <Link
               to={`/chat/${currentPot.id}`}
