@@ -68,10 +68,10 @@
   gap: 8px;
 }
 
-/* [수정] 경로 정보 스타일 변경 (세로 배치) */
+/* 경로 정보 스타일 */
 .pot-info {
   display: flex;
-  flex-direction: column; /* 세로로 변경 */
+  flex-direction: column;
   align-items: flex-start;
   font-size: 1.1rem;
   font-weight: 700;
@@ -79,7 +79,7 @@
   gap: 4px;
 }
 
-/* [추가] 화살표와 도착지를 묶는 컨테이너 */
+/* 화살표와 도착지를 묶는 컨테이너 */
 .route-destination-row {
   display: flex;
   align-items: center;
@@ -91,7 +91,6 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  /* [수정] 한 줄을 다 쓰므로 너비 제한 해제 */
   max-width: 100%;
 }
 
@@ -146,12 +145,19 @@
   background-color: #fa5252;
 }
 
+/* [추가] 배지들이 나열될 때 간격 조정 */
+.status-badge-group {
+  display: flex;
+  gap: 4px;
+}
+
 /* 상태 배지 스타일 */
 .status-badge {
   font-size: 0.8rem;
   padding: 4px 8px;
   border-radius: 6px;
   font-weight: 700;
+  white-space: nowrap; /* 배지 텍스트 줄바꿈 방지 */
 }
 
 .status-badge.recruiting {
@@ -167,6 +173,12 @@
 .status-badge.closed {
   background-color: #f1f3f5;
   color: #adb5bd;
+}
+
+/* [추가] 모집중지(Locked) 스타일 (노란색 계열) */
+.status-badge.locked {
+  background-color: #fff9db;
+  color: #f59f00;
 }
 
 /* 인원수 스타일 */

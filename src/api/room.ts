@@ -26,6 +26,8 @@ export interface Pot {
   estimatedFee: number;
   status: 'RECRUITING' | 'SUCCESS' | 'FAILED' | 'EXPIRED';
   unreadCount: number;
+  totalUnreadCount: number; // [추가] 봇 메시지 포함 전체 안 읽은 수
+  isLocked: boolean;
 }
 
 export interface Message {
@@ -106,6 +108,47 @@ export const reportMessage = async (
   const response = await apiClient.post<ReportMessageResponse>(
     `/rooms/${roomId}/reports`,
     report
+  );
+  return response.data;
+};
+
+// New API call: Get Kakao Deep Link
+export const getKakaoDeepLink = async (roomId: number): Promise<string> => {
+  const response = await apiClient.get<string>(
+    `/rooms/${roomId}/kakao-deep-link`
+  );
+  return response.data;
+};
+
+// New API call: Kick user from room
+export const kickUserFromRoom = async (
+  roomId: number,
+  targetUserId: number
+): Promise<void> => {
+  await apiClient.delete(`/rooms/${roomId}/members/${targetUserId}`);
+};
+
+// 방 모집 상태 변경 (Lock/Unlock)
+export const updateRoomStatus = async (
+  roomId: number,
+  isLocked: boolean
+): Promise<void> => {
+  await apiClient.patch(`/rooms/${roomId}/status`, { isLocked });
+};
+
+export interface Participant {
+  userId: number;
+  username: string;
+  profileImageUrl: string;
+  role: string;
+}
+
+// New API call: Get room participants
+export const getRoomParticipants = async (
+  roomId: number
+): Promise<Participant[]> => {
+  const response = await apiClient.get<Participant[]>(
+    `/rooms/${roomId}/participants`
   );
   return response.data;
 };
