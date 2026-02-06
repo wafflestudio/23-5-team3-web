@@ -109,3 +109,36 @@ export const reportMessage = async (
   );
   return response.data;
 };
+
+// New API call: Get Kakao Deep Link
+export const getKakaoDeepLink = async (roomId: number): Promise<string> => {
+  const response = await apiClient.get<string>(
+    `/rooms/${roomId}/kakao-deep-link`
+  );
+  return response.data;
+};
+
+// New API call: Kick user from room
+export const kickUserFromRoom = async (
+  roomId: number,
+  targetUserId: number
+): Promise<void> => {
+  await apiClient.delete(`/rooms/${roomId}/members/${targetUserId}`);
+};
+
+export interface Participant {
+  userId: number;
+  username: string;
+  profileImageUrl: string;
+  role: string;
+}
+
+// New API call: Get room participants
+export const getRoomParticipants = async (
+  roomId: number
+): Promise<Participant[]> => {
+  const response = await apiClient.get<Participant[]>(
+    `/rooms/${roomId}/participants`
+  );
+  return response.data;
+};

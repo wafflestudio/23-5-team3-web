@@ -7,10 +7,19 @@ import {
   useRef,
   useState,
 } from 'react';
-import { FaBell } from 'react-icons/fa';
+import { FaBell, FaEllipsisV } from 'react-icons/fa'; // Added FaEllipsisV
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import type { Message } from '../../api/room';
-import { getMessages, markAsRead, reportMessage } from '../../api/room';
+import {
+  type Participant, // Added Participant interface
+  getCurrentPot, // Added getCurrentPot
+  getKakaoDeepLink, // Added getKakaoDeepLink
+  getMessages,
+  getRoomParticipants, // Added getRoomParticipants
+  kickUserFromRoom, // Added kickUserFromRoom
+  markAsRead,
+  reportMessage,
+} from '../../api/room';
 import { createStompClient } from '../../api/websocket';
 import { isLoggedInAtom, userIdAtom } from '../../common/user';
 import './ChatRoom.css';
@@ -37,6 +46,12 @@ const ChatRoom = () => {
   const [isLoggedIn] = useAtom(isLoggedInAtom);
   const [userId] = useAtom(userIdAtom);
   const [newMessage, setNewMessage] = useState('');
+  const [roomOwnerId, setRoomOwnerId] = useState<number | null>(null); // New state
+  const [showMenu, setShowMenu] = useState(false); // New state
+  const [showTaxiLinkModal, setShowTaxiLinkModal] = useState(false); // New state
+  const [taxiLink, setTaxiLink] = useState<string | null>(null); // New state
+  const [showKickUserModal, setShowKickUserModal] = useState(false); // New state
+  const [participants, setParticipants] = useState<Participant[]>([]); // New state
 
   // Refs
   const clientRef = useRef<Client | null>(null);
@@ -53,6 +68,27 @@ const ChatRoom = () => {
     (location.state as { unreadCount?: number })?.unreadCount || 0;
   const totalMembers =
     (location.state as { totalMembers?: number })?.totalMembers || 2;
+
+  // New useEffect to fetch room owner ID
+  useEffect(() => {
+    if (isLoggedIn && roomId) {
+      const fetchOwner = async () => {
+        try {
+          const pot = await getCurrentPot();
+          if (pot && pot.id === parseInt(roomId, 10)) {
+            // Ensure it's the current room's pot
+            setRoomOwnerId(pot.ownerId);
+          }
+        } catch (error) {
+          console.error('Error fetching current pot:', error);
+          // Handle error, e.g., if user is not in a pot
+        }
+      };
+      fetchOwner();
+    }
+  }, [isLoggedIn, roomId]);
+
+  const isOwner = userId === roomOwnerId;
 
   // Effects
   useEffect(() => {
@@ -86,6 +122,10 @@ const ChatRoom = () => {
   };
 
   const handleReport = async (messageToReport: Message) => {
+    if (messageToReport.senderId === userId) {
+      alert('자신의 메시지는 신고할 수 없습니다.');
+      return;
+    }
     const reason = prompt('신고 이유: (ABUSE, SPAM, OTHER)', 'OTHER');
     if (reason && roomId) {
       try {
@@ -101,6 +141,52 @@ const ChatRoom = () => {
           console.error('Axios error response:', error.response?.data);
         }
         alert('메시지 신고에 실패했습니다.');
+      }
+    }
+  };
+
+  const handleGetTaxiLink = async () => {
+    if (!roomId) return;
+    try {
+      const link = await getKakaoDeepLink(parseInt(roomId, 10));
+      setTaxiLink(link);
+      setShowTaxiLinkModal(true);
+    } catch (error) {
+      console.error('Error getting Kakao Deep Link:', error);
+      alert('카카오택시 링크를 가져오는데 실패했습니다.');
+    } finally {
+      setShowMenu(false);
+    }
+  };
+
+  const handleKickUser = async () => {
+    if (!roomId) return;
+    try {
+      const allParticipants = await getRoomParticipants(parseInt(roomId, 10));
+      const kickableParticipants = allParticipants.filter(
+        (p) => p.userId !== userId
+      );
+      setParticipants(kickableParticipants);
+      setShowKickUserModal(true);
+    } catch (error) {
+      console.error('Error fetching participants:', error);
+      alert('참가자 목록을 불러오는데 실패했습니다.');
+    } finally {
+      setShowMenu(false); // Close main menu after action
+    }
+  };
+
+  const handleConfirmKick = async (username: string, userId: number) => {
+    if (!roomId) return;
+    if (window.confirm(`정말로 유저 ID ${username} 님을 강퇴하시겠습니까?`)) {
+      try {
+        await kickUserFromRoom(parseInt(roomId, 10), userId);
+        alert(`유저 ID ${username} 님이 강퇴되었습니다.`);
+      } catch (error) {
+        console.error('Error kicking user:', error);
+        alert('유저 강퇴에 실패했습니다.');
+      } finally {
+        setShowKickUserModal(false); // Close the kick user modal
       }
     }
   };
@@ -364,6 +450,27 @@ const ChatRoom = () => {
 
   return (
     <div className="chat-room-container">
+      {/* New Header Section */}
+      <div className="chat-header">
+        <h2>팟 채팅방</h2> {/* {roomId} */}
+        {isOwner && (
+          <div className="menu-container">
+            <button
+              className="menu-button"
+              onClick={() => setShowMenu(!showMenu)}
+            >
+              <FaEllipsisV />
+            </button>
+            {showMenu && (
+              <div className="menu-dropdown">
+                <button onClick={handleGetTaxiLink}>택시 호출 링크</button>
+                <button onClick={handleKickUser}>사용자 강퇴</button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
       <div
         className="messages-container"
         ref={scrollContainerRef}
@@ -518,6 +625,67 @@ const ChatRoom = () => {
           </svg>
         </button>
       </div>
+
+      {showTaxiLinkModal && taxiLink && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>카카오택시 링크</h3>
+            <p>아래 링크를 클릭하여 카카오택시를 호출하세요:</p>
+            <a
+              href={taxiLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="taxi-link"
+            >
+              {taxiLink}
+            </a>
+            <button
+              className="close-button"
+              onClick={() => setShowTaxiLinkModal(false)}
+            >
+              닫기
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showKickUserModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>사용자 강퇴</h3>
+            <div className="participant-list">
+              {participants.length > 0 ? (
+                participants.map((p) => (
+                  <div key={p.userId} className="participant-item">
+                    <img
+                      src={
+                        p.profileImageUrl || 'https://via.placeholder.com/30'
+                      }
+                      alt={p.username}
+                      className="participant-profile-pic"
+                    />
+                    <span>{p.username}</span>
+                    <button
+                      className="kick-button"
+                      onClick={() => handleConfirmKick(p.username, p.userId)}
+                    >
+                      강퇴
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <p>강퇴할 다른 사용자가 없습니다.</p>
+              )}
+            </div>
+            <button
+              className="close-button"
+              onClick={() => setShowKickUserModal(false)}
+            >
+              닫기
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
