@@ -61,6 +61,13 @@
   gap: 15px;
 }
 
+.info-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+}
+
 .info-row label {
   font-size: 0.85rem;
   color: #888;
@@ -203,8 +210,8 @@
 }
 
 .withdraw-btn {
-  background-color: #dc3545; /* Red color for a destructive action */
-  color: white;
+  background-color: #f1f3f5; /* Light gray background */
+  color: #495057; /* Darker gray letters */
   border: none;
   padding: 10px 20px;
   border-radius: 6px;
@@ -213,5 +220,6 @@
 }
 
 .withdraw-btn:hover {
-  background-color: #c82333;
+  background-color: #e9ecef; /* Slightly darker gray on hover */
+  color: #343a40;
 }

@@ -1,7 +1,7 @@
 import { isAxiosError } from 'axios';
 import { useAtom } from 'jotai';
 import React, { useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom';
 import { withdrawUser } from '../../api/auth'; // Added withdrawUser
 import { BACKEND_URL } from '../../api/constants';
 import { updateProfilePicture, updateUsername } from '../../api/user';
@@ -29,7 +29,7 @@ const MyPage = () => {
   // 파일 입력창(input type="file")을 열기 위한 ref
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const _navigate = useNavigate(); // Added navigate hook
+  // const _navigate = useNavigate(); // Added navigate hook
 
   // 로그인 핸들러 (버튼 클릭 시 호출)
   const handleLogin = () => {
@@ -184,13 +184,15 @@ const MyPage = () => {
               </button>
             </>
           ) : (
-            <button className="edit-btn" onClick={handleEdit}>
-              프로필 수정
-            </button>
+            <>
+              <button className="edit-btn" onClick={handleEdit}>
+                프로필 수정
+              </button>
+              <button className="withdraw-btn" onClick={handleWithdraw}>
+                회원탈퇴
+              </button>
+            </>
           )}
-          <button className="withdraw-btn" onClick={handleWithdraw}>
-            회원탈퇴
-          </button>
         </div>
       </div>
     </div>
