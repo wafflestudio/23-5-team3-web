@@ -124,7 +124,8 @@
 }
 
 .login-button:hover {
-  background-color: #333;
-  border-color: #333;
-  color: #fff;
+  /* [수정] 호버 시 '출발확정' 배경색(#e7f5ff) 및 텍스트 색상(#1c7ed6) 적용 */
+  background-color: #e7f5ff;
+  border-color: #e7f5ff; /* 테두리도 배경색과 맞춤 */
+  color: #007bff;
 }
