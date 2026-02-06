@@ -16,7 +16,6 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick }) => {
     minute: '2-digit',
   });
 
-
   // 상태에 따른 텍스트 및 스타일 결정
   let statusText = '모집중';
   let statusClass = 'recruiting';
