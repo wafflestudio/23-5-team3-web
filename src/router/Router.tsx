@@ -4,6 +4,7 @@ import AdminPage from '../pages/AdminPage';
 import ReportDetail from '../pages/AdminPage/ReportDetail';
 import ChatRoom from '../pages/ChatRoom';
 import CreateRoom from '../pages/CreateRoom';
+import ErrorPage from '../pages/ErrorPage'; // Added ErrorPage import
 import MyChat from '../pages/MyChat';
 import MyPage from '../pages/MyPage/MyPage';
 import RoomSearch from '../pages/SearchRoom/RoomSearch';
@@ -23,6 +24,8 @@ const Router = () => {
     <BrowserRouter>
       <Routes>
         <Route path="/terms" element={<Terms />} />
+        <Route path="/error" element={<ErrorPage />} />{' '}
+        {/* Added ErrorPage route */}
         <Route element={<MainLayout />}>
           <Route path="/search-room" element={<RoomSearch />} />
           <Route path="/create-room" element={<CreateRoom />} />

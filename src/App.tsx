@@ -2,6 +2,7 @@ import { useSetAtom } from 'jotai';
 import { useEffect, useState } from 'react';
 import { getMe } from './api/auth';
 import { getUserId } from './api/user';
+
 import {
   emailAtom,
   isLoggedInAtom,
