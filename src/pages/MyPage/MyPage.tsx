@@ -21,7 +21,7 @@ const MyPage = () => {
   // 로컬 상태 관리 (수정 모드, 파일 객체 등)
   const [isEditing, setIsEditing] = useState(false);
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
-  // Removed: const [showTermsModal, setShowTermsModal] = useState(false); // New state
+  // Removed: const [showTermsModal, setShowTermsModal] = useState(false);
 
   // 취소 시 되돌리기 위한 원래 이름 저장
   const [originalNickname, setOriginalNickname] = useState(nickname);
@@ -101,7 +101,7 @@ const MyPage = () => {
           로그인이 필요한 서비스입니다
         </h2>
         <button
-          className="save-btn" // 기존 스타일 재사용 (파란색 버튼)
+          className="save-btn"
           onClick={handleLogin}
           style={{ fontSize: '1rem', padding: '12px 30px' }}
         >

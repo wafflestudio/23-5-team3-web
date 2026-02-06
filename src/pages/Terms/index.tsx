@@ -4,26 +4,26 @@ import { submitTermsAgreement, withdrawUser } from '../../api/auth';
 import { BACKEND_URL } from '../../api/constants';
 
 const Terms = () => {
-  // const [searchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
   // URL 쿼리스트링에서 token 파싱
-  // const token = searchParams.get('token');
+  const token = searchParams.get('token');
 
-  // useEffect(() => {
-  //   // 토큰이 없으면 잘못된 접근으로 간주하고 메인으로 이동
-  //   if (!token) {
-  //     alert('잘못된 접근입니다.');
-  //     navigate('/');
-  //   }
-  // }, [token, navigate]);
+  useEffect(() => {
+    // 토큰이 없으면 잘못된 접근으로 간주하고 메인으로 이동
+    if (!token) {
+      alert('잘못된 접근입니다.');
+      navigate('/');
+    }
+  }, [token, navigate]);
 
   const handleAgree = async () => {
-    // if (!token) return;
+    if (!token) return;
 
     try {
       // 약관 동의 API 호출
-      await submitTermsAgreement('');
+      await submitTermsAgreement(token);
       // 성공 시 메인페이지로 이동
       navigate('/');
     } catch (error) {
@@ -33,7 +33,6 @@ const Terms = () => {
   };
 
   const handleDisagree = async () => {
-    // Made async
     // 사용자 탈퇴 API 호출
     try {
       await withdrawUser();
