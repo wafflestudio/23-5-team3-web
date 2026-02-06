@@ -1,4 +1,3 @@
-import { isAxiosError } from 'axios';
 import { useAtom } from 'jotai';
 import {
   useCallback,
