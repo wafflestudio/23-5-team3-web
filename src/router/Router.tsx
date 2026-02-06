@@ -7,6 +7,7 @@ import CreateRoom from '../pages/CreateRoom';
 import MyChat from '../pages/MyChat';
 import MyPage from '../pages/MyPage/MyPage';
 import RoomSearch from '../pages/SearchRoom/RoomSearch';
+import Terms from '../pages/Terms';
 
 const MainLayout = () => {
   return (
@@ -21,6 +22,7 @@ const Router = () => {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/terms" element={<Terms />} />
         <Route element={<MainLayout />}>
           <Route path="/search-room" element={<RoomSearch />} />
           <Route path="/create-room" element={<CreateRoom />} />

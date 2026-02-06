@@ -16,9 +16,6 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick }) => {
     minute: '2-digit',
   });
 
-  // 요금 포맷팅
-  const feeDisplay = `${room.estimatedFee.toLocaleString()}원`;
-
   // 상태에 따른 텍스트 및 스타일 결정
   let statusText = '모집중';
   let statusClass = 'recruiting';
@@ -52,8 +49,6 @@ const RoomCard: React.FC<RoomCardProps> = ({ room, onClick }) => {
       {/* 2. 상세 정보 */}
       <div className="room-details-row">
         <span className="info-item time">{formattedTime}</span>
-        <span className="info-divider">|</span>
-        <span className="info-item fee">{feeDisplay}</span>
         <span className="info-divider">|</span>
         <span className="info-item min-cap">최소 {room.minCapacity}명</span>
       </div>
