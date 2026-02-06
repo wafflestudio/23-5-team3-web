@@ -369,6 +369,11 @@ const ChatRoom = () => {
         ref={scrollContainerRef}
         onScroll={handleScroll}
       >
+        {fetchingMore && (
+          <div className="loading-indicator">
+            <div className="spinner"></div>
+          </div>
+        )}
         {messages.map((msg, index) => {
           const isMyMessage = msg.senderId === userId;
           const isBotMessage = msg.senderId === 7;
