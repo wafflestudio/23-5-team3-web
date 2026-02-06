@@ -60,6 +60,12 @@ const ChatRoom = () => {
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [isLocked, setIsLocked] = useState(false);
 
+  // 신고하기 모달 상태
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [targetMessageForReport, setTargetMessageForReport] =
+    useState<Message | null>(null);
+  const [reportReason, setReportReason] = useState('ABUSE');
+
   // Refs
   const clientRef = useRef<Client | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
@@ -73,6 +79,10 @@ const ChatRoom = () => {
 
   const initialUnreadCount =
     (location.state as { unreadCount?: number })?.unreadCount || 0;
+  // [추가] 봇 메시지 포함 전체 안 읽은 수 가져오기
+  const initialTotalUnreadCount =
+    (location.state as { totalUnreadCount?: number })?.totalUnreadCount || 0;
+
   const totalMembers =
     (location.state as { totalMembers?: number })?.totalMembers || 2;
 
@@ -131,36 +141,45 @@ const ChatRoom = () => {
     }
   }, [isLoggedIn, navigate]);
 
-  // 메시지 클릭 핸들러
-  const handleMessageClick = (msgId: number, isMyMessage: boolean) => {
-    if (isMyMessage) return;
+  // 메시지 클릭 핸들러 (봇(ID:7) 및 내 메시지 클릭 무시)
+  const handleMessageClick = (msg: Message) => {
+    if (msg.senderId === 7 || msg.senderId === userId) return;
 
-    if (selectedMessageId === msgId) {
+    if (selectedMessageId === msg.id) {
       setSelectedMessageId(null);
     } else {
-      setSelectedMessageId(msgId);
+      setSelectedMessageId(msg.id);
     }
   };
 
-  const handleReport = async (messageToReport: Message) => {
+  // 신고 버튼 클릭 시 모달 열기
+  const handleOpenReportModal = (messageToReport: Message) => {
     if (messageToReport.senderId === userId) {
       alert('자신의 메시지는 신고할 수 없습니다.');
       return;
     }
-    const reason = prompt('신고 이유: (ABUSE, SPAM, OTHER)', 'OTHER');
-    if (reason && roomId) {
-      try {
-        await reportMessage(parseInt(roomId, 10), {
-          reason: reason.toUpperCase(),
-          targetMessageId: messageToReport.id,
-          reportedUserId: messageToReport.senderId,
-        });
-        alert('메시지가 성공적으로 신고되었습니다.');
-        setSelectedMessageId(null);
-      } catch (error) {
-        console.error('메시지 신고 실패:', error);
-        alert('메시지 신고에 실패했습니다.');
-      }
+    setTargetMessageForReport(messageToReport);
+    setReportReason('ABUSE');
+    setShowReportModal(true);
+    setSelectedMessageId(null);
+  };
+
+  // 실제 신고 API 호출
+  const handleSubmitReport = async () => {
+    if (!targetMessageForReport || !roomId) return;
+
+    try {
+      await reportMessage(parseInt(roomId, 10), {
+        reason: reportReason,
+        targetMessageId: targetMessageForReport.id,
+        reportedUserId: targetMessageForReport.senderId,
+      });
+      alert('메시지가 성공적으로 신고되었습니다.');
+      setShowReportModal(false);
+      setTargetMessageForReport(null);
+    } catch (error) {
+      console.error('메시지 신고 실패:', error);
+      alert('메시지 신고에 실패했습니다.');
     }
   };
 
@@ -169,7 +188,6 @@ const ChatRoom = () => {
     setShowMenu(false);
   };
 
-  // [수정] 워딩 통일: 모집중 / 모집중지
   const handleToggleStatus = async () => {
     if (!roomId) return;
     try {
@@ -177,7 +195,7 @@ const ChatRoom = () => {
       await updateRoomStatus(parseInt(roomId, 10), newStatus);
       setIsLocked(newStatus);
       alert(
-        `모집 상태가 ${newStatus ? '모집중지' : '모집중'}으로 변경되었습니다.`
+        `모집 상태가 ${newStatus ? '모집중단' : '모집중'}으로 변경되었습니다.`
       );
       setShowStatusModal(false);
     } catch (error) {
@@ -217,7 +235,6 @@ const ChatRoom = () => {
     }
   };
 
-  // [수정] 강퇴 메시지 워딩 수정 (유저 ID 삭제)
   const handleConfirmKick = async (username: string, userId: number) => {
     if (!roomId) return;
     if (window.confirm(`${username} 님을 강퇴하시겠습니까?`)) {
@@ -255,14 +272,21 @@ const ChatRoom = () => {
       const fetchInitial = async () => {
         setLoading(true);
         try {
-          const targetCount =
-            initialUnreadCount > 0 ? initialUnreadCount + 5 : 40;
+          // [수정] 봇 메시지 포함된 전체 안 읽은 개수를 기준으로 불러올 개수 설정
+          const unreadBase =
+            initialTotalUnreadCount > 0
+              ? initialTotalUnreadCount
+              : initialUnreadCount;
+          const targetCount = unreadBase > 0 ? unreadBase + 5 : 40;
+
           let collectedMessages: Message[] = [];
           let currentCursor: number | null = null;
           let keepFetching = true;
           let finalNextCursor: number | null = null;
           let finalHasNext = false;
           let finalReadStatuses: Record<number, number> = {};
+
+          let initialUserReadId: number | null = null;
 
           while (keepFetching && collectedMessages.length < targetCount) {
             const remaining = targetCount - collectedMessages.length;
@@ -272,6 +296,11 @@ const ChatRoom = () => {
               currentCursor,
               fetchSize
             );
+
+            if (initialUserReadId === null && res.readStatuses && userId) {
+              initialUserReadId = res.readStatuses[userId] || 0;
+            }
+
             collectedMessages = [...collectedMessages, ...res.items];
             finalReadStatuses = { ...finalReadStatuses, ...res.readStatuses };
             currentCursor = res.nextCursor;
@@ -293,11 +322,16 @@ const ChatRoom = () => {
           }
 
           if (!isInitialLoadComplete.current) {
-            const myLastReadId = finalReadStatuses[userId] || 0;
+            const myLastReadId =
+              initialUserReadId !== null
+                ? initialUserReadId
+                : finalReadStatuses[userId] || 0;
+
             const lastMessageId =
               sortedItems.length > 0
                 ? sortedItems[sortedItems.length - 1].id
                 : 0;
+
             if (myLastReadId >= lastMessageId) {
               setLastReadMessageIdOnEntry(null);
             } else {
@@ -320,7 +354,13 @@ const ChatRoom = () => {
       };
       fetchInitial();
     }
-  }, [isLoggedIn, roomId, userId, initialUnreadCount]);
+  }, [
+    isLoggedIn,
+    roomId,
+    userId,
+    initialUnreadCount,
+    initialTotalUnreadCount, // 의존성 추가
+  ]);
 
   useLayoutEffect(() => {
     if (
@@ -604,7 +644,7 @@ const ChatRoom = () => {
                     )}
                     <div
                       className={`message-content ${isSelected ? 'clicked' : ''}`}
-                      onClick={() => handleMessageClick(msg.id, isMyMessage)}
+                      onClick={() => handleMessageClick(msg)}
                     >
                       <p className="message-text">{msg.text}</p>
                     </div>
@@ -617,7 +657,7 @@ const ChatRoom = () => {
                           {isSelected && (
                             <button
                               className="report-button"
-                              onClick={() => handleReport(msg)}
+                              onClick={() => handleOpenReportModal(msg)}
                             >
                               <FaBell size={12} />
                             </button>
@@ -678,10 +718,10 @@ const ChatRoom = () => {
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h3>모집 상태 변경</h3>
             <p>
-              현재 상태: <strong>{isLocked ? '모집중지' : '모집중'}</strong>
+              현재 상태: <strong>{isLocked ? '모집중단' : '모집중'}</strong>
             </p>
             <p>
-              상태를 <strong>{isLocked ? '모집중' : '모집중지'}</strong>으로
+              상태를 <strong>{isLocked ? '모집중' : '모집중단'}</strong>으로
               변경하시겠습니까?
             </p>
             <div className="modal-actions">
@@ -702,7 +742,7 @@ const ChatRoom = () => {
         </div>
       )}
 
-      {/* [수정] 카카오택시 링크 모달 (버튼으로 변경) */}
+      {/* 카카오택시 링크 모달 */}
       {showTaxiLinkModal && taxiLink && (
         <div
           className="modal-overlay"
@@ -766,6 +806,70 @@ const ChatRoom = () => {
             >
               닫기
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* 신고하기 모달 */}
+      {showReportModal && (
+        <div
+          className="modal-overlay"
+          onClick={() => {
+            setShowReportModal(false);
+            setTargetMessageForReport(null);
+          }}
+        >
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>신고하기</h3>
+            <div className="report-list">
+              <label className="report-item">
+                <input
+                  type="radio"
+                  name="reportReason"
+                  value="ABUSE"
+                  checked={reportReason === 'ABUSE'}
+                  onChange={(e) => setReportReason(e.target.value)}
+                />
+                욕설/비하 발언
+              </label>
+              <label className="report-item">
+                <input
+                  type="radio"
+                  name="reportReason"
+                  value="SPAM"
+                  checked={reportReason === 'SPAM'}
+                  onChange={(e) => setReportReason(e.target.value)}
+                />
+                스팸/부적절한 홍보
+              </label>
+              <label className="report-item">
+                <input
+                  type="radio"
+                  name="reportReason"
+                  value="OTHER"
+                  checked={reportReason === 'OTHER'}
+                  onChange={(e) => setReportReason(e.target.value)}
+                />
+                기타 사유
+              </label>
+            </div>
+            <div className="modal-actions">
+              <button
+                className="action-button danger"
+                onClick={handleSubmitReport}
+              >
+                메세지 신고하기
+              </button>
+              <button
+                className="action-button secondary"
+                onClick={() => {
+                  setShowReportModal(false);
+                  setTargetMessageForReport(null);
+                }}
+              >
+                취소
+              </button>
+            </div>
           </div>
         </div>
       )}

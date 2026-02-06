@@ -77,7 +77,7 @@ const MyChat = () => {
     );
   }
 
-  // [수정] 상태 배지 렌더링 함수 추가
+  // 상태 배지 렌더링 함수
   const renderStatusBadges = () => {
     if (!currentPot) return null;
 
@@ -129,7 +129,8 @@ const MyChat = () => {
               to={`/chat/${currentPot.id}`}
               className="pot-link"
               state={{
-                unreadCount: currentPot.unreadCount,
+                unreadCount: currentPot.unreadCount, // 표시는 기존대로 유지
+                totalUnreadCount: currentPot.totalUnreadCount, // [수정] 메시지 로딩을 위해 추가 전달
                 totalMembers: currentPot.currentCount,
               }}
             >
@@ -165,7 +166,6 @@ const MyChat = () => {
                     )}
                   </span>
 
-                  {/* [수정] 배지 렌더링 함수 호출 */}
                   {renderStatusBadges()}
 
                   <span className="headcount-fixed">
