@@ -2,7 +2,7 @@ import { isAxiosError } from 'axios';
 import { useAtom } from 'jotai';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import type { ReportDetail as ReportDetailType } from '../../api/admin';
+import type { ReportDetail } from '../../api/admin';
 import {
   getReportById,
   markReportAsProcessed,
@@ -15,7 +15,7 @@ const ReportDetail = () => {
   const { reportId } = useParams<{ reportId: string }>();
   const navigate = useNavigate();
   const [userRole] = useAtom(userRoleAtom);
-  const [report, setReport] = useState<ReportDetailType | null>(null);
+  const [report, setReport] = useState<ReportDetail | null>(null);
   const [_loading, setLoading] = useState(true); // Start with loading true
   const [_error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
@@ -92,22 +92,8 @@ const ReportDetail = () => {
 
   if (userRole !== 'ADMIN') {
     return (
-      <div className="report-detail-container">Access Denied or Loading...</div>
+      <div className="report-detail-container">Loading or Access Denied...</div>
     );
-  }
-
-  if (_loading) {
-    return (
-      <div className="report-detail-container">Loading report details...</div>
-    );
-  }
-
-  if (_error) {
-    return <div className="report-detail-container">Error: {_error}</div>;
-  }
-
-  if (!report) {
-    return <div className="report-detail-container">Report not found.</div>;
   }
 
   return (
