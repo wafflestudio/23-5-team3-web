@@ -1,6 +1,7 @@
 import { isAxiosError } from 'axios';
 import { useAtom } from 'jotai';
 import React, { useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { BACKEND_URL } from '../../api/constants';
 import { updateProfilePicture, updateUsername } from '../../api/user';
 import {
@@ -20,12 +21,15 @@ const MyPage = () => {
   // 로컬 상태 관리 (수정 모드, 파일 객체 등)
   const [isEditing, setIsEditing] = useState(false);
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
+  // Removed: const [showTermsModal, setShowTermsModal] = useState(false); // New state
 
   // 취소 시 되돌리기 위한 원래 이름 저장
   const [originalNickname, setOriginalNickname] = useState(nickname);
 
   // 파일 입력창(input type="file")을 열기 위한 ref
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const navigate = useNavigate(); // Added navigate hook
 
   // 로그인 핸들러 (버튼 클릭 시 호출)
   const handleLogin = () => {
@@ -151,7 +155,6 @@ const MyPage = () => {
           </div>
         </div>
 
-        {/* 버튼 영역 */}
         <div className="button-group">
           {isEditing ? (
             <>
@@ -167,6 +170,9 @@ const MyPage = () => {
               프로필 수정
             </button>
           )}
+          <button className="terms-btn" onClick={() => navigate('/terms')}>
+            약관 및 정책
+          </button>
         </div>
       </div>
     </div>

@@ -1,29 +1,29 @@
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { submitTermsAgreement } from '../../api/auth';
+import { submitTermsAgreement, withdrawUser } from '../../api/auth';
 import { BACKEND_URL } from '../../api/constants';
 
 const Terms = () => {
-  const [searchParams] = useSearchParams();
+  // const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
   // URL 쿼리스트링에서 token 파싱
-  const token = searchParams.get('token');
+  // const token = searchParams.get('token');
 
-  useEffect(() => {
-    // 토큰이 없으면 잘못된 접근으로 간주하고 메인으로 이동
-    if (!token) {
-      alert('잘못된 접근입니다.');
-      navigate('/');
-    }
-  }, [token, navigate]);
+  // useEffect(() => {
+  //   // 토큰이 없으면 잘못된 접근으로 간주하고 메인으로 이동
+  //   if (!token) {
+  //     alert('잘못된 접근입니다.');
+  //     navigate('/');
+  //   }
+  // }, [token, navigate]);
 
   const handleAgree = async () => {
-    if (!token) return;
+    // if (!token) return;
 
     try {
       // 약관 동의 API 호출
-      await submitTermsAgreement(token);
+      await submitTermsAgreement('');
       // 성공 시 메인페이지로 이동
       navigate('/');
     } catch (error) {
@@ -32,7 +32,17 @@ const Terms = () => {
     }
   };
 
-  const handleDisagree = () => {
+  const handleDisagree = async () => {
+    // Made async
+    // 사용자 탈퇴 API 호출
+    try {
+      await withdrawUser();
+    } catch (error) {
+      console.error('User withdrawal failed:', error);
+      alert('회원 탈퇴 중 오류가 발생했습니다. 다시 시도해주세요.');
+      // Proceed with logout even if withdrawal fails, to prevent user being stuck
+    }
+
     // 동의 거부 시 로그아웃 처리 (Navbar와 동일한 로직)
     const frontendRedirectUri = window.location.origin;
     const encodedUri = encodeURIComponent(frontendRedirectUri);
