@@ -7,18 +7,19 @@ import {
   useRef,
   useState,
 } from 'react';
-import { FaBell, FaEllipsisV } from 'react-icons/fa'; // Added FaEllipsisV
+import { FaBars, FaBell } from 'react-icons/fa';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import type { Message } from '../../api/room';
 import {
-  type Participant, // Added Participant interface
-  getCurrentPot, // Added getCurrentPot
-  getKakaoDeepLink, // Added getKakaoDeepLink
+  type Participant,
+  getCurrentPot,
+  getKakaoDeepLink,
   getMessages,
-  getRoomParticipants, // Added getRoomParticipants
-  kickUserFromRoom, // Added kickUserFromRoom
+  getRoomParticipants,
+  kickUserFromRoom,
   markAsRead,
   reportMessage,
+  updateRoomStatus,
 } from '../../api/room';
 import { createStompClient } from '../../api/websocket';
 import { isLoggedInAtom, userIdAtom } from '../../common/user';
@@ -33,7 +34,9 @@ const ChatRoom = () => {
   // State
   const [messages, setMessages] = useState<Message[]>([]);
   const [readStatuses, setReadStatuses] = useState<Record<number, number>>({});
-  const [hoveredMessageId, setHoveredMessageId] = useState<number | null>(null);
+  const [selectedMessageId, setSelectedMessageId] = useState<number | null>(
+    null
+  );
   const [loading, setLoading] = useState(false);
   const [isReady, setIsReady] = useState(false);
   const [fetchingMore, setFetchingMore] = useState(false);
@@ -46,12 +49,16 @@ const ChatRoom = () => {
   const [isLoggedIn] = useAtom(isLoggedInAtom);
   const [userId] = useAtom(userIdAtom);
   const [newMessage, setNewMessage] = useState('');
-  const [roomOwnerId, setRoomOwnerId] = useState<number | null>(null); // New state
-  const [showMenu, setShowMenu] = useState(false); // New state
-  const [showTaxiLinkModal, setShowTaxiLinkModal] = useState(false); // New state
-  const [taxiLink, setTaxiLink] = useState<string | null>(null); // New state
-  const [showKickUserModal, setShowKickUserModal] = useState(false); // New state
-  const [participants, setParticipants] = useState<Participant[]>([]); // New state
+  const [roomOwnerId, setRoomOwnerId] = useState<number | null>(null);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showTaxiLinkModal, setShowTaxiLinkModal] = useState(false);
+  const [taxiLink, setTaxiLink] = useState<string | null>(null);
+  const [showKickUserModal, setShowKickUserModal] = useState(false);
+  const [participants, setParticipants] = useState<Participant[]>([]);
+
+  // 모집 상태 관리
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [isLocked, setIsLocked] = useState(false);
 
   // Refs
   const clientRef = useRef<Client | null>(null);
@@ -62,33 +69,52 @@ const ChatRoom = () => {
   const isInitialLoadComplete = useRef(false);
   const isAtBottomRef = useRef(true);
   const lastMessageIdRef = useRef<number | null>(null);
-  const hoverTimerRef = useRef<number | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const initialUnreadCount =
     (location.state as { unreadCount?: number })?.unreadCount || 0;
   const totalMembers =
     (location.state as { totalMembers?: number })?.totalMembers || 2;
 
-  // New useEffect to fetch room owner ID
+  // Fetch Owner & Current Status
   useEffect(() => {
     if (isLoggedIn && roomId) {
-      const fetchOwner = async () => {
+      const fetchOwnerAndStatus = async () => {
         try {
           const pot = await getCurrentPot();
           if (pot && pot.id === parseInt(roomId, 10)) {
-            // Ensure it's the current room's pot
             setRoomOwnerId(pot.ownerId);
+            setIsLocked(pot.isLocked);
           }
         } catch (error) {
           console.error('Error fetching current pot:', error);
-          // Handle error, e.g., if user is not in a pot
         }
       };
-      fetchOwner();
+      fetchOwnerAndStatus();
     }
   }, [isLoggedIn, roomId]);
 
   const isOwner = userId === roomOwnerId;
+
+  // 메뉴 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setShowMenu(false);
+      }
+      if (
+        !(event.target as HTMLElement).closest('.message-bubble') &&
+        !(event.target as HTMLElement).closest('.report-button')
+      ) {
+        setSelectedMessageId(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Effects
   useEffect(() => {
@@ -105,20 +131,15 @@ const ChatRoom = () => {
     }
   }, [isLoggedIn, navigate]);
 
-  const handleMouseEnter = (msgId: number) => {
-    if (hoverTimerRef.current) {
-      clearTimeout(hoverTimerRef.current);
-    }
-    hoverTimerRef.current = window.setTimeout(() => {
-      setHoveredMessageId(msgId);
-    }, 1500);
-  };
+  // 메시지 클릭 핸들러
+  const handleMessageClick = (msgId: number, isMyMessage: boolean) => {
+    if (isMyMessage) return;
 
-  const handleMouseLeave = () => {
-    if (hoverTimerRef.current) {
-      clearTimeout(hoverTimerRef.current);
+    if (selectedMessageId === msgId) {
+      setSelectedMessageId(null);
+    } else {
+      setSelectedMessageId(msgId);
     }
-    setHoveredMessageId(null);
   };
 
   const handleReport = async (messageToReport: Message) => {
@@ -135,13 +156,33 @@ const ChatRoom = () => {
           reportedUserId: messageToReport.senderId,
         });
         alert('메시지가 성공적으로 신고되었습니다.');
+        setSelectedMessageId(null);
       } catch (error) {
         console.error('메시지 신고 실패:', error);
-        if (isAxiosError(error)) {
-          console.error('Axios error response:', error.response?.data);
-        }
         alert('메시지 신고에 실패했습니다.');
       }
+    }
+  };
+
+  const handleOpenStatusModal = () => {
+    setShowStatusModal(true);
+    setShowMenu(false);
+  };
+
+  // [수정] 워딩 통일: 모집중 / 모집중지
+  const handleToggleStatus = async () => {
+    if (!roomId) return;
+    try {
+      const newStatus = !isLocked;
+      await updateRoomStatus(parseInt(roomId, 10), newStatus);
+      setIsLocked(newStatus);
+      alert(
+        `모집 상태가 ${newStatus ? '모집중지' : '모집중'}으로 변경되었습니다.`
+      );
+      setShowStatusModal(false);
+    } catch (error) {
+      console.error('Error updating room status:', error);
+      alert('모집 상태 변경에 실패했습니다.');
     }
   };
 
@@ -172,21 +213,22 @@ const ChatRoom = () => {
       console.error('Error fetching participants:', error);
       alert('참가자 목록을 불러오는데 실패했습니다.');
     } finally {
-      setShowMenu(false); // Close main menu after action
+      setShowMenu(false);
     }
   };
 
+  // [수정] 강퇴 메시지 워딩 수정 (유저 ID 삭제)
   const handleConfirmKick = async (username: string, userId: number) => {
     if (!roomId) return;
-    if (window.confirm(`정말로 유저 ID ${username} 님을 강퇴하시겠습니까?`)) {
+    if (window.confirm(`${username} 님을 강퇴하시겠습니까?`)) {
       try {
         await kickUserFromRoom(parseInt(roomId, 10), userId);
-        alert(`유저 ID ${username} 님이 강퇴되었습니다.`);
+        alert(`${username} 님이 강퇴되었습니다.`);
       } catch (error) {
         console.error('Error kicking user:', error);
-        alert('유저 강퇴에 실패했습니다.');
+        alert('사용자 강퇴에 실패했습니다.');
       } finally {
-        setShowKickUserModal(false); // Close the kick user modal
+        setShowKickUserModal(false);
       }
     }
   };
@@ -375,6 +417,8 @@ const ChatRoom = () => {
   }, [messages, isReady, fetchingMore, userId]);
 
   const handleScroll = () => {
+    setSelectedMessageId(null);
+
     if (scrollContainerRef.current) {
       const { scrollTop, scrollHeight, clientHeight } =
         scrollContainerRef.current;
@@ -450,26 +494,23 @@ const ChatRoom = () => {
 
   return (
     <div className="chat-room-container">
-      {/* New Header Section */}
-      <div className="chat-header">
-        <h2>팟 채팅방</h2> {/* {roomId} */}
-        {isOwner && (
-          <div className="menu-container">
-            <button
-              className="menu-button"
-              onClick={() => setShowMenu(!showMenu)}
-            >
-              <FaEllipsisV />
-            </button>
-            {showMenu && (
-              <div className="menu-dropdown">
-                <button onClick={handleGetTaxiLink}>택시 호출 링크</button>
-                <button onClick={handleKickUser}>사용자 강퇴</button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+      {isOwner && (
+        <div className="menu-container" ref={menuRef}>
+          <button
+            className="menu-button"
+            onClick={() => setShowMenu(!showMenu)}
+          >
+            <FaBars />
+          </button>
+          {showMenu && (
+            <div className="menu-dropdown">
+              <button onClick={handleOpenStatusModal}>모집 상태 변경</button>
+              <button onClick={handleGetTaxiLink}>택시 호출 링크</button>
+              <button onClick={handleKickUser}>사용자 강퇴</button>
+            </div>
+          )}
+        </div>
+      )}
 
       <div
         className="messages-container"
@@ -502,6 +543,7 @@ const ChatRoom = () => {
           }
 
           const unreadCount = getUnreadCountForMessage(msg);
+          const isSelected = selectedMessageId === msg.id;
 
           return (
             <div key={msg.id || `msg-${index}`}>
@@ -525,8 +567,6 @@ const ChatRoom = () => {
                       ? 'bot-message'
                       : 'other-message'
                 }`}
-                onMouseEnter={() => handleMouseEnter(msg.id)}
-                onMouseLeave={handleMouseLeave}
               >
                 {!isMyMessage && !isBotMessage && (
                   <div className="profile-column">
@@ -562,7 +602,10 @@ const ChatRoom = () => {
                         </span>
                       </div>
                     )}
-                    <div className="message-content">
+                    <div
+                      className={`message-content ${isSelected ? 'clicked' : ''}`}
+                      onClick={() => handleMessageClick(msg.id, isMyMessage)}
+                    >
                       <p className="message-text">{msg.text}</p>
                     </div>
                     {!isMyMessage && !isBotMessage && (
@@ -571,12 +614,12 @@ const ChatRoom = () => {
                           {unreadCount > 0 && (
                             <span className="unread-count">{unreadCount}</span>
                           )}
-                          {hoveredMessageId === msg.id && (
+                          {isSelected && (
                             <button
                               className="report-button"
                               onClick={() => handleReport(msg)}
                             >
-                              <FaBell size={10} />
+                              <FaBell size={12} />
                             </button>
                           )}
                         </div>
@@ -587,7 +630,7 @@ const ChatRoom = () => {
                           })}
                         </span>
                       </div>
-                    )}{' '}
+                    )}
                   </div>
                 </div>
               </div>
@@ -626,18 +669,55 @@ const ChatRoom = () => {
         </button>
       </div>
 
+      {/* 모집 상태 변경 모달 */}
+      {showStatusModal && (
+        <div
+          className="modal-overlay"
+          onClick={() => setShowStatusModal(false)}
+        >
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3>모집 상태 변경</h3>
+            <p>
+              현재 상태: <strong>{isLocked ? '모집중지' : '모집중'}</strong>
+            </p>
+            <p>
+              상태를 <strong>{isLocked ? '모집중' : '모집중지'}</strong>으로
+              변경하시겠습니까?
+            </p>
+            <div className="modal-actions">
+              <button
+                className="action-button primary"
+                onClick={handleToggleStatus}
+              >
+                변경하기
+              </button>
+              <button
+                className="action-button secondary"
+                onClick={() => setShowStatusModal(false)}
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* [수정] 카카오택시 링크 모달 (버튼으로 변경) */}
       {showTaxiLinkModal && taxiLink && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+        <div
+          className="modal-overlay"
+          onClick={() => setShowTaxiLinkModal(false)}
+        >
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h3>카카오택시 링크</h3>
-            <p>아래 링크를 클릭하여 카카오택시를 호출하세요:</p>
+            <p>아래 버튼을 눌러 카카오택시를 호출하세요:</p>
             <a
               href={taxiLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="taxi-link"
+              className="kakao-link-button"
             >
-              {taxiLink}
+              카카오택시 호출하기
             </a>
             <button
               className="close-button"
@@ -650,8 +730,11 @@ const ChatRoom = () => {
       )}
 
       {showKickUserModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
+        <div
+          className="modal-overlay"
+          onClick={() => setShowKickUserModal(false)}
+        >
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <h3>사용자 강퇴</h3>
             <div className="participant-list">
               {participants.length > 0 ? (
@@ -674,7 +757,7 @@ const ChatRoom = () => {
                   </div>
                 ))
               ) : (
-                <p>강퇴할 다른 사용자가 없습니다.</p>
+                <p>강퇴할 사용자가 없습니다.</p>
               )}
             </div>
             <button

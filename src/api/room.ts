@@ -26,7 +26,7 @@ export interface Pot {
   estimatedFee: number;
   status: 'RECRUITING' | 'SUCCESS' | 'FAILED' | 'EXPIRED';
   unreadCount: number;
-  isLocked: boolean; // [수정] isLocked 필드 추가
+  isLocked: boolean;
 }
 
 export interface Message {
@@ -125,6 +125,14 @@ export const kickUserFromRoom = async (
   targetUserId: number
 ): Promise<void> => {
   await apiClient.delete(`/rooms/${roomId}/members/${targetUserId}`);
+};
+
+// [추가] 방 모집 상태 변경 (Lock/Unlock)
+export const updateRoomStatus = async (
+  roomId: number,
+  isLocked: boolean
+): Promise<void> => {
+  await apiClient.patch(`/rooms/${roomId}/status`, { isLocked });
 };
 
 export interface Participant {
