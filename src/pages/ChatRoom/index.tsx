@@ -276,7 +276,7 @@ const ChatRoom = () => {
             initialTotalUnreadCount > 0
               ? initialTotalUnreadCount
               : initialUnreadCount;
-          const targetCount = unreadBase > 0 ? unreadBase + 5 : 40;
+          const targetCount = Math.max(40, unreadBase + 5);
 
           let collectedMessages: Message[] = [];
           let currentCursor: number | null = null;
