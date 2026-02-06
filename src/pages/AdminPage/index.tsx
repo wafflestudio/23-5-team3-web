@@ -132,7 +132,7 @@ const AdminPage = () => {
             </button>
             <span>
               Page {pageInfo ? pageInfo.number + 1 : 1} of{' '}
-              {pageInfo ? pageInfo.totalPages : 1}
+              {pageInfo ? Math.max(1, pageInfo.totalPages) : 1}
             </span>
             <button
               onClick={() => setPage((p) => p + 1)}

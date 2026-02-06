@@ -82,10 +82,30 @@ export const getMessages = async (
   return response.data;
 };
 
-// [수정] 주석 해제 및 구현
 export const markAsRead = async (
   roomId: number,
   messageId: number
 ): Promise<void> => {
   await apiClient.patch(`/rooms/${roomId}/read`, { messageId });
+};
+
+interface ReportMessageRequest {
+  reason: string;
+  targetMessageId: number;
+  reportedUserId: number;
+}
+
+interface ReportMessageResponse {
+  reportId: number;
+}
+
+export const reportMessage = async (
+  roomId: number,
+  report: ReportMessageRequest
+): Promise<ReportMessageResponse> => {
+  const response = await apiClient.post<ReportMessageResponse>(
+    `/rooms/${roomId}/reports`,
+    report
+  );
+  return response.data;
 };
