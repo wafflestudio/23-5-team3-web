@@ -209,3 +209,20 @@
 .mypage-close-button:hover {
   background-color: #0056b3;
 }
+
+/* [추가] 로그인 안 했을 때 메시지 스타일 (MyChat과 유사하게) */
+.mypage-no-login-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 100px; /* MyChat의 margin-top: 100px과 동일 */
+  gap: 20px;
+}
+
+.mypage-no-login-text {
+  text-align: center;
+  color: #000000;
+  font-size: 1.1rem; /* MyChat의 font-size: 1.1rem과 동일 */
+  font-weight: 500; /* MyChat의 font-weight: 500과 동일 */
+}

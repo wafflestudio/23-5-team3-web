@@ -106,20 +106,22 @@ const MyPage = () => {
     }
   };
 
-  // 로그인되지 않은 경우 안내 문구와 로그인 버튼 표시
+  // 로그인되지 않은 경우 안내 문구와 로그인 버튼 표시 (MyChat 스타일 적용)
   if (!isLoggedIn) {
     return (
-      <div className="mypage-container" style={{ marginTop: '20vh' }}>
-        <h2 style={{ marginBottom: '20px', color: '#333' }}>
-          로그인이 필요한 서비스입니다
-        </h2>
-        <button
-          className="mypage-save-btn"
-          onClick={handleLogin}
-          style={{ fontSize: '1rem', padding: '12px 30px' }}
-        >
-          로그인
-        </button>
+      <div className="mypage-container">
+        <div className="mypage-no-login-container">
+          <div className="mypage-no-login-text">
+            로그인이 필요한 서비스입니다.
+          </div>
+          <button
+            className="mypage-save-btn"
+            onClick={handleLogin}
+            style={{ fontSize: '1rem', padding: '10px 30px' }}
+          >
+            로그인
+          </button>
+        </div>
       </div>
     );
   }
