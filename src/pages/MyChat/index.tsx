@@ -57,7 +57,7 @@ const MyChat = () => {
   const handleLeave = async () => {
     if (currentPot) {
       // eslint-disable-next-line no-restricted-globals
-      if (confirm('정말로 현재 방에서 나가시겠습니까?')) {
+      if (confirm('현재 방에서 나가시겠습니까?')) {
         try {
           await leaveRoom(currentPot.id);
           alert('방에서 나갔습니다.');
@@ -123,7 +123,7 @@ const MyChat = () => {
         <div className="no-pot-message">현재 참여 중인 팟이 없습니다.</div>
       ) : (
         <>
-          <h1 className="page-title">참여 중인 팟</h1>
+          <h1 className="page-title">나의 택시팟</h1>
           <div className="current-pot-card">
             <Link
               to={`/chat/${currentPot.id}`}

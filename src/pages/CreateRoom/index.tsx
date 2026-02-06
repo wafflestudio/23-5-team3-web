@@ -75,7 +75,7 @@ const CreateRoom = () => {
     const departureId = parseInt(start, 10);
     const destinationId = parseInt(end, 10);
 
-    // [수정] UTC 변환 없이 사용자가 선택한 한국 시간 그대로 전송 ('YYYY-MM-DDTHH:mm:00')
+    // UTC 변환 없이 사용자가 선택한 한국 시간 그대로 전송 ('YYYY-MM-DDTHH:mm:00')
     const departureTimeISO = `${departureTime}:00`;
 
     const roomDetails = {
@@ -88,8 +88,9 @@ const CreateRoom = () => {
     };
 
     try {
-      const response = await createRoom(roomDetails);
-      alert('방이 성공적으로 개설되었습니다! ID: ' + response.createdPotId);
+      await createRoom(roomDetails);
+      // [수정] 방 ID 출력 제거
+      alert('방이 성공적으로 개설되었습니다!');
       navigate('/search-room');
     } catch (error: unknown) {
       let errorMsg = '방 개설 중 오류가 발생했습니다.';

@@ -1,60 +1,37 @@
 import { useAtom } from 'jotai';
-import {
-  FaComment,
-  FaPlus,
-  FaSearch,
-  FaShieldAlt,
-  FaUser,
-} from 'react-icons/fa';
 import { Link, useLocation } from 'react-router-dom';
 import { BACKEND_URL } from '../../api/constants';
-import {
-  emailAtom,
-  isLoggedInAtom,
-  nicknameAtom,
-  profileImageAtom,
-  userRoleAtom,
-} from '../../common/user';
+import { isLoggedInAtom, userRoleAtom } from '../../common/user';
 import './navBar.css';
 
 const NavBar = () => {
   const location = useLocation();
   const [isLoggedIn] = useAtom(isLoggedInAtom);
   const [userRole] = useAtom(userRoleAtom);
-  const [, _setEmail] = useAtom(emailAtom);
-  const [, _setNickname] = useAtom(nicknameAtom);
-  const [, _setProfileImage] = useAtom(profileImageAtom);
 
-  const navLinks = [
-    { path: '/search-room', icon: <FaSearch />, label: 'roomSearch' },
-    { path: '/create-room', icon: <FaPlus />, label: 'roomCreate' },
-    { path: '/my-chat', icon: <FaComment />, label: 'myChat' },
-    { path: '/my-page', icon: <FaUser />, label: 'myPage' },
+  // 한글 메뉴명 적용
+  const mainLinks = [
+    { path: '/search-room', label: '택시팟 찾기' },
+    { path: '/create-room', label: '택시팟 만들기' },
+    { path: '/my-chat', label: '나의 택시팟' },
+    { path: '/my-page', label: '마이페이지' },
   ];
-
-  if (userRole === 'ADMIN') {
-    navLinks.push({ path: '/admin', icon: <FaShieldAlt />, label: 'admin' });
-  }
 
   const isLinkActive = (path: string) => {
     if (path === '/search-room' && location.pathname === '/') {
       return true;
     }
-    return location.pathname === path;
+    return location.pathname.startsWith(path);
   };
 
   const handleGoogleLogin = () => {
     const frontendRedirectUri = window.location.origin;
-
     const encodedUri = encodeURIComponent(frontendRedirectUri);
     const googleLoginUrl = `${BACKEND_URL}/login?redirect_uri=${encodedUri}`;
-
     window.location.href = googleLoginUrl;
   };
 
   const handleLogout = () => {
-    // This assumes the backend's /logout endpoint is updated
-    // to accept a `redirect_uri` query parameter.
     const frontendRedirectUri = window.location.origin;
     const encodedUri = encodeURIComponent(frontendRedirectUri);
     window.location.href = `${BACKEND_URL}/logout?redirect_uri=${encodedUri}`;
@@ -63,24 +40,34 @@ const NavBar = () => {
   return (
     <div className="nav-wrapper">
       <nav className="navBar">
+        {/* 1. 좌측 로고 영역 */}
         <div className="logo">
           <Link to="/">
-            <img src="/snuxi-logo.png" alt="SNUXI Logo" />
+            <img src="/snuxi-logo.png" alt="SNUXI" />
           </Link>
         </div>
-        <div className="nav-links">
-          {navLinks.map(({ path, icon, label }) => (
+
+        {/* 2. 중앙 메인 네비게이션 영역 */}
+        <div className="nav-center">
+          {mainLinks.map(({ path, label }) => (
             <Link
               key={path}
               to={path}
               className={`nav-item ${isLinkActive(path) ? 'active' : ''}`}
             >
-              <div className="icon">{icon}</div>
-              <div className="label">{label}</div>
+              {label}
             </Link>
           ))}
         </div>
-        <div className="login">
+
+        {/* 3. 우측 로그인/관리자 영역 */}
+        <div className="nav-right">
+          {userRole === 'ADMIN' && (
+            <Link to="/admin" className="admin-link">
+              관리자
+            </Link>
+          )}
+
           {isLoggedIn ? (
             <button
               type="button"
