@@ -57,14 +57,8 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 15px;
-}
-
-.info-row {
-  display: flex;
-  flex-direction: column;
   align-items: flex-start;
-  gap: 5px;
+  gap: 15px;
 }
 
 .info-row label {
@@ -206,4 +200,18 @@
 
 .close-button:hover {
   background-color: #0056b3;
+}
+
+.withdraw-btn {
+  background-color: #dc3545; /* Red color for a destructive action */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.withdraw-btn:hover {
+  background-color: #c82333;
 }

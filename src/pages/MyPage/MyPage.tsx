@@ -2,6 +2,7 @@ import { isAxiosError } from 'axios';
 import { useAtom } from 'jotai';
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { withdrawUser } from '../../api/auth'; // Added withdrawUser
 import { BACKEND_URL } from '../../api/constants';
 import { updateProfilePicture, updateUsername } from '../../api/user';
 import {
@@ -13,7 +14,7 @@ import {
 import './MyPage.css';
 
 const MyPage = () => {
-  const [isLoggedIn] = useAtom(isLoggedInAtom);
+  const [isLoggedIn, _setIsLoggedIn] = useAtom(isLoggedInAtom); // Destructure setIsLoggedIn
   const [email] = useAtom(emailAtom);
   const [nickname, setNickname] = useAtom(nicknameAtom);
   const [profileImage, setProfileImage] = useAtom(profileImageAtom);
@@ -21,7 +22,6 @@ const MyPage = () => {
   // 로컬 상태 관리 (수정 모드, 파일 객체 등)
   const [isEditing, setIsEditing] = useState(false);
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
-  // Removed: const [showTermsModal, setShowTermsModal] = useState(false);
 
   // 취소 시 되돌리기 위한 원래 이름 저장
   const [originalNickname, setOriginalNickname] = useState(nickname);
@@ -29,7 +29,7 @@ const MyPage = () => {
   // 파일 입력창(input type="file")을 열기 위한 ref
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const navigate = useNavigate(); // Added navigate hook
+  const _navigate = useNavigate(); // Added navigate hook
 
   // 로그인 핸들러 (버튼 클릭 시 호출)
   const handleLogin = () => {
@@ -91,6 +91,24 @@ const MyPage = () => {
   const handleCancel = () => {
     setIsEditing(false);
     setNickname(originalNickname);
+  };
+
+  const handleWithdraw = async () => {
+    if (
+      window.confirm('정말로 회원 탈퇴를 하시겠습니까? 모든 정보가 삭제됩니다.')
+    ) {
+      try {
+        await withdrawUser();
+        alert('회원 탈퇴가 완료되었습니다.');
+        // Perform full logout redirection, same as in Terms page
+        const frontendRedirectUri = window.location.origin;
+        const encodedUri = encodeURIComponent(frontendRedirectUri);
+        window.location.href = `${BACKEND_URL}/logout?redirect_uri=${encodedUri}`;
+      } catch (error) {
+        console.error('회원 탈퇴 실패:', error);
+        alert('회원 탈퇴에 실패했습니다. 다시 시도해주세요.');
+      }
+    }
   };
 
   // [수정] 로그인되지 않은 경우 안내 문구와 로그인 버튼 표시
@@ -170,8 +188,8 @@ const MyPage = () => {
               프로필 수정
             </button>
           )}
-          <button className="terms-btn" onClick={() => navigate('/terms')}>
-            약관 및 정책
+          <button className="withdraw-btn" onClick={handleWithdraw}>
+            회원탈퇴
           </button>
         </div>
       </div>
