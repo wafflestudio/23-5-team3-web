@@ -72,16 +72,26 @@ const ReportDetail = () => {
 
   const handleSuspendUser = async () => {
     if (!report || actionLoading) return;
+    const daysStr = prompt('정지 기간을 입력하세요 (일 단위):', '7'); // Prompt for days
+    if (daysStr === null || daysStr.trim() === '') {
+      return; // User cancelled or entered empty string
+    }
+    const days = parseInt(daysStr, 10);
+    if (isNaN(days) || days <= 0) {
+      alert('유효한 정지 기간을 입력해야 합니다.');
+      return;
+    }
+
     if (
       window.confirm(
-        `Are you sure you want to suspend user ${report.reportedEmail}?`
+        `Are you sure you want to suspend user ${report.reportedEmail} for ${days} days?`
       )
     ) {
       setActionLoading(true);
       try {
-        const response = await suspendUser(report.reportedUserId);
+        const responseMessage = await suspendUser(report.reportedUserId, days); // Pass days
         alert(
-          `User ${report.reportedEmail} suspended for ${response.days} days.`
+          `User ${report.reportedEmail} suspension initiated. Server message: ${responseMessage}` // Use string response
         );
       } catch (err) {
         alert('Failed to suspend user.');
