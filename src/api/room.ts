@@ -26,6 +26,7 @@ export interface Pot {
   estimatedFee: number;
   status: 'RECRUITING' | 'SUCCESS' | 'FAILED' | 'EXPIRED';
   unreadCount: number;
+  isLocked: boolean; // [수정] isLocked 필드 추가
 }
 
 export interface Message {

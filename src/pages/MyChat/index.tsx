@@ -77,21 +77,45 @@ const MyChat = () => {
     );
   }
 
-  let statusText = '모집중';
-  let statusClass = 'recruiting';
+  // [수정] 상태 배지 렌더링 함수 추가
+  const renderStatusBadges = () => {
+    if (!currentPot) return null;
 
-  if (currentPot) {
-    if (currentPot.status === 'SUCCESS') {
-      statusText = '출발확정';
-      statusClass = 'success';
-    } else if (currentPot.status === 'RECRUITING') {
-      statusText = '모집중';
-      statusClass = 'recruiting';
-    } else {
-      statusText = '마감';
-      statusClass = 'closed';
+    const { status, isLocked } = currentPot;
+    const badges = [];
+
+    // 1. 모집 상태 판단 (RECRUITING or SUCCESS)
+    if (status === 'RECRUITING' || status === 'SUCCESS') {
+      if (isLocked) {
+        // 방장이 잠금을 걸었으면 '모집중지' (노랑)
+        badges.push({ text: '모집중지', type: 'locked' });
+      } else {
+        // 잠금이 없으면 '모집중' (초록)
+        badges.push({ text: '모집중', type: 'recruiting' });
+      }
     }
-  }
+
+    // 2. 출발 확정 판단 (SUCCESS)
+    // SUCCESS 상태면 위의 모집 상태 뒤에 '출발확정' (파랑) 추가
+    if (status === 'SUCCESS') {
+      badges.push({ text: '출발확정', type: 'success' });
+    }
+
+    // 3. 그 외 상태 (FAILED, EXPIRED 등)
+    if (status !== 'RECRUITING' && status !== 'SUCCESS') {
+      badges.push({ text: '마감', type: 'closed' });
+    }
+
+    return (
+      <div className="status-badge-group">
+        {badges.map((badge, index) => (
+          <span key={index} className={`status-badge ${badge.type}`}>
+            {badge.text}
+          </span>
+        ))}
+      </div>
+    );
+  };
 
   return (
     <div className="my-chat-container">
@@ -101,7 +125,6 @@ const MyChat = () => {
         <>
           <h1 className="page-title">참여 중인 팟</h1>
           <div className="current-pot-card">
-            {/* [수정] unreadCount와 함께 currentCount(참여인원)도 전달 */}
             <Link
               to={`/chat/${currentPot.id}`}
               className="pot-link"
@@ -142,9 +165,9 @@ const MyChat = () => {
                     )}
                   </span>
 
-                  <span className={`status-badge ${statusClass}`}>
-                    {statusText}
-                  </span>
+                  {/* [수정] 배지 렌더링 함수 호출 */}
+                  {renderStatusBadges()}
+
                   <span className="headcount-fixed">
                     {currentPot.currentCount}/{currentPot.maxCapacity}
                   </span>
