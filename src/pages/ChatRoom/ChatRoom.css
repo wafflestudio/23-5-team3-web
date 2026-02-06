@@ -390,7 +390,7 @@
 /* Floating Menu Button */
 .menu-container {
   position: absolute;
-  top: 16px;
+  top: 30px;
   right: 16px;
   z-index: 50;
 }
