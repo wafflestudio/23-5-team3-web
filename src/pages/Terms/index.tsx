@@ -1,11 +1,15 @@
+import { useAtom } from 'jotai'; // [추가] jotai import
 import { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { submitTermsAgreement } from '../../api/auth';
 import { BACKEND_URL } from '../../api/constants';
+import { isLoggedInAtom } from '../../common/user'; // [추가] 로그인 상태 Atom import
 
 const Terms = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  // [추가] 로그인 상태를 변경하기 위한 세터 가져오기
+  const [, setIsLoggedIn] = useAtom(isLoggedInAtom);
 
   // URL 쿼리스트링에서 token 파싱
   const token = searchParams.get('token');
@@ -24,6 +28,10 @@ const Terms = () => {
     try {
       // 약관 동의 API 호출
       await submitTermsAgreement(token);
+
+      // [수정] 약관 동의 성공 시, 프론트엔드 상태를 '로그인 됨'으로 변경
+      setIsLoggedIn(true);
+
       // 성공 시 메인페이지로 이동
       navigate('/');
     } catch (error) {
