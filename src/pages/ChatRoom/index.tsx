@@ -86,10 +86,6 @@ const ChatRoom = () => {
   };
 
   const handleReport = async (messageToReport: Message) => {
-    if (messageToReport.senderId === userId) {
-      alert('자신의 메시지는 신고할 수 없습니다.');
-      return;
-    }
     const reason = prompt('신고 이유: (ABUSE, SPAM, OTHER)', 'OTHER');
     if (reason && roomId) {
       try {
