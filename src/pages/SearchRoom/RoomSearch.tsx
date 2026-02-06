@@ -307,7 +307,7 @@ const RoomSearch = () => {
             )}
             {showJoinModal && (
               <>
-                <p>택시팟에 참가하시겠습니까?</p>
+                <p>택시팟에 참여하시겠습니까?</p>
                 <div style={buttonGroupStyle}>
                   <button onClick={closeModals} style={cancelButtonStyle}>
                     뒤로가기

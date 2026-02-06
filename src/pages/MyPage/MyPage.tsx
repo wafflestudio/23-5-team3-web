@@ -92,9 +92,7 @@ const MyPage = () => {
   };
 
   const handleWithdraw = async () => {
-    if (
-      window.confirm('정말로 회원 탈퇴를 하시겠습니까? 모든 정보가 삭제됩니다.')
-    ) {
+    if (window.confirm('회원 탈퇴를 하시겠습니까? 모든 정보가 삭제됩니다.')) {
       try {
         await withdrawUser();
         alert('회원 탈퇴가 완료되었습니다.');

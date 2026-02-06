@@ -57,7 +57,7 @@ const MyChat = () => {
   const handleLeave = async () => {
     if (currentPot) {
       // eslint-disable-next-line no-restricted-globals
-      if (confirm('정말로 현재 방에서 나가시겠습니까?')) {
+      if (confirm('현재 방에서 나가시겠습니까?')) {
         try {
           await leaveRoom(currentPot.id);
           alert('방에서 나갔습니다.');
