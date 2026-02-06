@@ -2,7 +2,7 @@ import { isAxiosError } from 'axios';
 import { useAtom } from 'jotai';
 import React, { useState, useRef } from 'react';
 // import { useNavigate } from 'react-router-dom';
-import { withdrawUser } from '../../api/auth'; // Added withdrawUser
+import { withdrawUser } from '../../api/auth';
 import { BACKEND_URL } from '../../api/constants';
 import { updateProfilePicture, updateUsername } from '../../api/user';
 import {
@@ -14,7 +14,7 @@ import {
 import './MyPage.css';
 
 const MyPage = () => {
-  const [isLoggedIn, _setIsLoggedIn] = useAtom(isLoggedInAtom); // Destructure setIsLoggedIn
+  const [isLoggedIn, _setIsLoggedIn] = useAtom(isLoggedInAtom);
   const [email] = useAtom(emailAtom);
   const [nickname, setNickname] = useAtom(nicknameAtom);
   const [profileImage, setProfileImage] = useAtom(profileImageAtom);
@@ -28,8 +28,6 @@ const MyPage = () => {
 
   // 파일 입력창(input type="file")을 열기 위한 ref
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // const _navigate = useNavigate(); // Added navigate hook
 
   // 로그인 핸들러 (버튼 클릭 시 호출)
   const handleLogin = () => {
@@ -94,13 +92,10 @@ const MyPage = () => {
   };
 
   const handleWithdraw = async () => {
-    if (
-      window.confirm('정말로 회원 탈퇴를 하시겠습니까? 모든 정보가 삭제됩니다.')
-    ) {
+    if (window.confirm('회원 탈퇴를 하시겠습니까? 모든 정보가 삭제됩니다.')) {
       try {
         await withdrawUser();
         alert('회원 탈퇴가 완료되었습니다.');
-        // Perform full logout redirection, same as in Terms page
         const frontendRedirectUri = window.location.origin;
         const encodedUri = encodeURIComponent(frontendRedirectUri);
         window.location.href = `${BACKEND_URL}/logout?redirect_uri=${encodedUri}`;
@@ -111,20 +106,22 @@ const MyPage = () => {
     }
   };
 
-  // [수정] 로그인되지 않은 경우 안내 문구와 로그인 버튼 표시
+  // 로그인되지 않은 경우 안내 문구와 로그인 버튼 표시 (MyChat 스타일 적용)
   if (!isLoggedIn) {
     return (
-      <div className="mypage-container" style={{ marginTop: '20vh' }}>
-        <h2 style={{ marginBottom: '20px', color: '#333' }}>
-          로그인이 필요한 서비스입니다
-        </h2>
-        <button
-          className="save-btn"
-          onClick={handleLogin}
-          style={{ fontSize: '1rem', padding: '12px 30px' }}
-        >
-          로그인
-        </button>
+      <div className="mypage-container">
+        <div className="mypage-no-login-container">
+          <div className="mypage-no-login-text">
+            로그인이 필요한 서비스입니다.
+          </div>
+          <button
+            className="mypage-save-btn"
+            onClick={handleLogin}
+            style={{ fontSize: '1rem', padding: '10px 30px' }}
+          >
+            로그인
+          </button>
+        </div>
       </div>
     );
   }
@@ -133,15 +130,18 @@ const MyPage = () => {
     <div className="mypage-container">
       <h1>마이페이지</h1>
 
-      <div className="profile-card">
+      <div className="mypage-profile-card">
         {/* 프로필 이미지 영역 */}
-        <div className="profile-image-wrapper" onClick={triggerFileSelect}>
+        <div
+          className="mypage-profile-image-wrapper"
+          onClick={triggerFileSelect}
+        >
           <img
             src={profileImage || 'https://via.placeholder.com/150?text=Profile'}
             alt="프로필 사진"
-            className={`profile-image ${isEditing ? 'editable' : ''}`}
+            className={`mypage-profile-image ${isEditing ? 'editable' : ''}`}
           />
-          {isEditing && <div className="overlay">📷 변경</div>}
+          {isEditing && <div className="mypage-overlay">📷 변경</div>}
           <input
             type="file"
             ref={fileInputRef}
@@ -152,43 +152,45 @@ const MyPage = () => {
         </div>
 
         {/* 사용자 정보 영역 */}
-        <div className="profile-info">
-          <div className="info-row">
+        <div className="mypage-profile-info">
+          <div className="mypage-info-row">
             <label>이메일</label>
-            <span className="email-text">{email || 'guest@snu.ac.kr'}</span>
+            <span className="mypage-email-text">
+              {email || 'guest@snu.ac.kr'}
+            </span>
           </div>
 
-          <div className="info-row">
+          <div className="mypage-info-row">
             <label>이름</label>
             {isEditing ? (
               <input
                 type="text"
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
-                className="nickname-input"
+                className="mypage-nickname-input"
               />
             ) : (
-              <span className="nickname-text">{nickname}</span>
+              <span className="mypage-nickname-text">{nickname}</span>
             )}
           </div>
         </div>
 
-        <div className="button-group">
+        <div className="mypage-button-group">
           {isEditing ? (
             <>
-              <button className="save-btn" onClick={handleSave}>
+              <button className="mypage-save-btn" onClick={handleSave}>
                 저장
               </button>
-              <button className="cancel-btn" onClick={handleCancel}>
+              <button className="mypage-cancel-btn" onClick={handleCancel}>
                 취소
               </button>
             </>
           ) : (
             <>
-              <button className="edit-btn" onClick={handleEdit}>
+              <button className="mypage-edit-btn" onClick={handleEdit}>
                 프로필 수정
               </button>
-              <button className="withdraw-btn" onClick={handleWithdraw}>
+              <button className="mypage-withdraw-btn" onClick={handleWithdraw}>
                 회원탈퇴
               </button>
             </>

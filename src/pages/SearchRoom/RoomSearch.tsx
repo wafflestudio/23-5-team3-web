@@ -114,7 +114,7 @@ const RoomSearch = () => {
           currentCapacity: item.currentCount,
           hostName: item.ownerName,
           estimatedFee: item.estimatedFee,
-          status: item.status, // [중요] 상태값 매핑 추가
+          status: item.status,
         }));
 
         const isLast = response.data.last ?? newRooms.length === 0;
@@ -299,6 +299,12 @@ const RoomSearch = () => {
                   <button
                     onClick={handleLoginConfirm}
                     style={confirmButtonStyle}
+                    onMouseOver={(e) =>
+                      (e.currentTarget.style.backgroundColor = '#0056b3')
+                    }
+                    onMouseOut={(e) =>
+                      (e.currentTarget.style.backgroundColor = '#007bff')
+                    }
                   >
                     로그인
                   </button>
@@ -307,7 +313,7 @@ const RoomSearch = () => {
             )}
             {showJoinModal && (
               <>
-                <p>택시팟에 참가하시겠습니까?</p>
+                <p>택시팟에 참여하시겠습니까?</p>
                 <div style={buttonGroupStyle}>
                   <button onClick={closeModals} style={cancelButtonStyle}>
                     뒤로가기
@@ -315,6 +321,12 @@ const RoomSearch = () => {
                   <button
                     onClick={handleJoinConfirm}
                     style={confirmButtonStyle}
+                    onMouseOver={(e) =>
+                      (e.currentTarget.style.backgroundColor = '#0056b3')
+                    }
+                    onMouseOut={(e) =>
+                      (e.currentTarget.style.backgroundColor = '#007bff')
+                    }
                   >
                     참여하기
                   </button>
@@ -373,10 +385,11 @@ const confirmButtonStyle: React.CSSProperties = {
   padding: '10px',
   borderRadius: '8px',
   border: 'none',
-  backgroundColor: '#3b82f6',
+  backgroundColor: '#007bff', // [수정] 마이페이지 파란색 적용
   color: 'white',
   cursor: 'pointer',
   fontWeight: 'bold',
+  transition: 'background-color 0.2s', // 부드러운 색상 전환 추가
 };
 
 export default RoomSearch;
